@@ -1,0 +1,1872 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Linguaaa</title>
+<meta name="theme-color" content="#1437F5">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Linguaaa">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="icon-512.png">
+<link rel="manifest" href="manifest.webmanifest">
+<style>:root{padding:env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px)}html{-webkit-text-size-adjust:100%}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<script src="cards.js"></script>
+</head>
+<body><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700;800&family=Noto+Sans+Arabic:wght@500;700&display=swap">
+<style>
+/* Layout: three screens in one column — language menu, topic folders, trainer.
+   One committed look: a cobalt field with giant letters of the language being learned,
+   white cards and black type on top, frosted glass only for the floating controls. */
+:root{
+  color-scheme:light;
+  --blue:#1437F5; --blue-deep:#0B23B5; --blue-lift:#2B4DFF;
+  --ink:#0A0C16; --paper:#FFFFFF; --mist:#E8ECFF; --muted:#5A6283;
+  --on:#FFFFFF; --on-muted:rgba(255,255,255,.76); --on-faint:rgba(255,255,255,.24);
+  --ui:"Onest","Segoe UI",Roboto,Arial,sans-serif;
+  --arabic:"Noto Sans Arabic","Segoe UI",Tahoma,Arial,sans-serif;
+  --r:22px;
+}
+/* --app-h is set by script on iPhone home-screen apps, where the reported viewport is shorter than the screen */
+/* The root keeps the real screen height and is NOT clipped (no overflow:hidden here): on an iPhone home-screen
+   app that clipping stops the background from being painted in the strip below the reported viewport. */
+html{height:var(--app-h,100%);background:var(--blue);overscroll-behavior:none}
+body{height:100%;overscroll-behavior:none}
+/* The page itself never moves, so it cannot be dragged off its place. Only this layer scrolls, it does not
+   bounce past its edges, and when everything fits (.fits, set by script) it takes no scroll gestures at all. */
+.scroll{position:fixed;top:0;left:0;right:0;height:var(--app-h,100%);z-index:1;overflow-x:hidden;overflow-y:auto;overscroll-behavior:none;touch-action:pan-y;
+  padding:env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px)}
+.scroll.fits{overflow:hidden;touch-action:none}
+.sheet-wrap{touch-action:none}
+.sheet-list,.sheet-body,.field textarea{overscroll-behavior:contain;touch-action:pan-y}
+.ver:empty{display:none}
+.tip.ver{margin:auto 2px 0 0;align-self:flex-end;padding-top:12px;font-size:11px;opacity:.6;font-variant-numeric:tabular-nums}
+/* sharing: a quiet button under "add words", folder ticks and the code box in the dialog */
+.share-words{min-height:46px;border-radius:999px;display:flex;align-items:center;justify-content:center;gap:8px;font-weight:700;font-size:15px;transition:transform .18s cubic-bezier(.2,.8,.2,1)}
+.share-words:active{transform:scale(.97)}
+.share-words svg{width:18px;height:18px}
+.picks{display:flex;flex-direction:column;gap:6px;flex:none}
+.pick small{font-weight:500;color:var(--muted);font-size:14px}
+.tick{width:26px;height:26px;border-radius:50%;background:var(--blue);display:grid;place-items:center;flex:none;transition:opacity .2s,transform .2s}
+.pick .tick svg{width:15px;height:15px;color:#fff}
+.pick[aria-pressed="false"] .tick{opacity:.16;transform:scale(.86)}
+.field textarea.code{min-height:96px;font-size:16px;line-height:1.35;word-break:break-all}
+.field textarea.code[readonly]{color:var(--muted)}
+body{background:var(--blue);color:var(--on);font-family:var(--ui);font-size:16px;line-height:1.35}
+*{box-sizing:border-box}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer;text-align:inherit;-webkit-tap-highlight-color:transparent}
+:focus-visible{outline:2px solid #fff;outline-offset:3px}
+.sheet :focus-visible{outline-color:var(--blue)}
+.arab{font-family:var(--arabic)}
+
+/* background: flat cobalt, one deeper disc, two giant letters */
+.bg{position:fixed;top:0;left:0;right:0;height:var(--app-h,100%);z-index:0;overflow:hidden;pointer-events:none;background:var(--blue)}
+.bg::before{content:"";position:absolute;width:130vmax;height:130vmax;border-radius:50%;left:-78vmax;bottom:-86vmax;background:var(--blue-deep)}
+.bg b{position:absolute;font-weight:800;line-height:.8;white-space:nowrap;-webkit-user-select:none;user-select:none}
+.bg .g1{right:-5vmin;top:5vmin;font-size:76vmin;color:var(--blue-lift)}
+.bg .g2{left:-7vmin;bottom:-4vmin;font-size:98vmin;color:transparent;-webkit-text-stroke:2px rgba(255,255,255,.17)}
+.bg b.arab{line-height:1.1}
+
+#app{position:relative;z-index:1;min-height:100%;max-width:560px;margin:0 auto;padding-inline:16px;padding-block:20px 20px;display:flex;flex-direction:column}
+.view{flex:1;display:flex;flex-direction:column;gap:14px;min-width:0}
+
+/* frosted glass, for floating controls only */
+.glass{background:rgba(255,255,255,.14);-webkit-backdrop-filter:blur(18px) saturate(150%);backdrop-filter:blur(18px) saturate(150%);
+  border:1px solid rgba(255,255,255,.36);box-shadow:inset 0 1px 0 rgba(255,255,255,.55),0 12px 26px -14px rgba(3,8,60,.6)}
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){ .glass{background:#3353F7} }
+.panel{background:var(--paper);color:var(--ink);box-shadow:0 16px 30px -20px rgba(3,8,60,.75)}
+
+/* home */
+.home-head{display:flex;align-items:flex-end;justify-content:space-between;gap:10px;padding:6px 4px 6px;flex-wrap:wrap}
+.motto{margin:0 0 6px;font-size:11px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--on-muted)}
+.brand{margin:0;font-size:36px;font-weight:800;letter-spacing:-.04em;line-height:1}
+.brand span:nth-child(2){opacity:.62}.brand span:nth-child(3){opacity:.34}
+.sub{margin:6px 0 0;color:var(--on-muted);font-size:15px}
+.head-tools{display:flex;align-items:center;gap:8px;margin-left:auto}
+.chip{flex:none;font-size:13px;font-weight:600;padding:0 12px;min-height:40px;display:flex;align-items:center;border-radius:999px;font-variant-numeric:tabular-nums}
+.round{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;flex:none}
+.round svg{width:20px;height:20px}
+.lang-list{display:flex;flex-direction:column;gap:12px}
+.swipe{position:relative}
+.del{position:absolute;right:0;top:0;bottom:0;width:84px;border-radius:var(--r);background:var(--ink);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-size:13px;font-weight:700;visibility:hidden;opacity:0}
+.del svg{width:22px;height:22px}
+.swipe.open .del{visibility:visible}
+.lang-btn{position:relative;overflow:hidden;display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:16px;
+  width:100%;min-height:96px;padding:12px 16px 12px 12px;border-radius:var(--r);touch-action:pan-y;-webkit-user-select:none;user-select:none}
+.sig{position:absolute;right:54px;top:50%;transform:translateY(-52%);font-size:128px;font-weight:800;line-height:1;color:var(--mist);pointer-events:none;white-space:nowrap}
+.sig.arab{transform:translateY(-58%);font-size:104px}
+.badge{position:relative;width:72px;height:72px;border-radius:50%;overflow:hidden;flex:none;box-shadow:0 0 0 2px var(--mist)}
+.badge svg{display:block;width:100%;height:100%}
+.badge.code{display:grid;place-items:center;font-size:24px;font-weight:800;letter-spacing:-.02em;background:var(--blue);color:#fff}
+.lang-text{position:relative;min-width:0;display:flex;flex-direction:column;gap:1px}
+.endo{font-size:23px;font-weight:800;line-height:1.15;letter-spacing:-.02em;overflow-wrap:anywhere}
+.endo.arab{font-weight:700;font-size:26px;line-height:1.3;letter-spacing:0}
+.ru-name{font-size:14px;color:var(--muted)}
+.go{position:relative;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;flex:none;background:var(--blue);color:#fff}
+.go.last{background:var(--ink)}
+.go svg{width:18px;height:18px}
+.tip{margin:2px 4px 0;font-size:13px;color:var(--on-muted)}
+
+/* top bar on inner screens */
+.bar{display:flex;align-items:center;gap:10px;min-height:46px}
+.nav-back{display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:0 16px 0 10px;border-radius:999px;font-weight:600;font-size:15px}
+.nav-back svg{width:18px;height:18px}
+.bar-title{flex:1;min-width:0;text-align:right;font-size:14px;color:var(--on-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bar-title b{color:var(--on);font-weight:700}
+
+/* topics */
+.hero{display:flex;align-items:center;gap:16px;padding:8px 4px 4px}
+.hero .badge{box-shadow:0 0 0 2px rgba(255,255,255,.5)}
+.hero .endo{font-size:clamp(32px,10vw,46px);letter-spacing:-.035em;line-height:1.05}
+.hero .endo.arab{font-size:clamp(34px,11vw,46px);line-height:1.3;letter-spacing:0}
+.hero .ru-name{font-size:15px;color:var(--on-muted)}
+.h2{margin:8px 4px 0;font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--on-muted)}
+.folders{display:flex;flex-direction:column;gap:10px}
+.folder{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:14px;width:100%;min-height:76px;padding:12px 14px;border-radius:var(--r);transition:transform .14s}
+.folder:active{transform:scale(.985)}
+.folder .ficon{width:44px;height:44px;border-radius:14px;display:grid;place-items:center;background:var(--mist)}
+.folder .ficon svg{width:24px;height:20px}
+.folder .fbody{display:flex;flex-direction:column;gap:2px;min-width:0}
+.folder .fname{font-weight:700;font-size:17px;line-height:1.2;overflow-wrap:anywhere}
+.folder .fmeta{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+.ring{position:relative;width:46px;height:46px;flex:none;display:grid;place-items:center;font-size:11px;font-weight:700;font-variant-numeric:tabular-nums}
+.ring svg{position:absolute;inset:0;width:100%;height:100%;transform:rotate(-90deg)}
+.ring circle{fill:none;stroke-width:3.5}
+.ring .tr{stroke:var(--mist)}.ring .pr{stroke:var(--blue);stroke-linecap:round}
+
+.note{border-radius:var(--r);display:flex;flex-direction:column;justify-content:center;gap:8px;padding:24px}
+.note h2{margin:0;font-size:24px;font-weight:800;line-height:1.12;letter-spacing:-.02em;text-wrap:balance}
+.note p{margin:0;color:var(--muted);max-width:44ch}
+.note button{align-self:flex-start;margin-top:8px;min-height:46px;padding:0 20px;border-radius:999px;background:var(--blue);color:#fff;font-weight:700}
+
+/* trainer */
+.stage{flex:1;min-height:360px;display:flex}
+.stage .note{flex:1}
+.card{position:relative;flex:1;display:flex;border-radius:30px;padding:18px;cursor:pointer;-webkit-tap-highlight-color:transparent;min-width:0;
+  touch-action:pan-y;-webkit-user-select:none;user-select:none;will-change:transform}
+.card.is-back{background:var(--ink);color:#fff}
+.side{flex:1;display:flex;flex-direction:column;gap:12px;min-width:0;min-height:0}
+.meta{display:flex;justify-content:space-between;gap:10px;font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.is-back .meta{color:rgba(255,255,255,.6)}
+/* .mid holds the big word and its reading and keeps them in the middle of the card, with or without a reading;
+   next to a picture it shrinks to its content and the picture takes the room */
+.mid{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;min-width:0;min-height:0}
+.haspic .mid{flex:none;padding-bottom:6px}
+.big{max-width:100%;text-align:center;text-wrap:balance;font-weight:800;font-size:clamp(34px,11vw,58px);line-height:1.08;letter-spacing:-.035em;overflow-wrap:anywhere}
+.big.long{font-size:clamp(24px,7.5vw,38px);letter-spacing:-.02em}
+.big.xlong{font-size:clamp(21px,6vw,30px);line-height:1.2;letter-spacing:-.01em}
+.big.arab{font-weight:700;letter-spacing:0;line-height:1.8;font-size:clamp(42px,13vw,66px)}
+.big.long.arab,.big.xlong.arab{font-size:clamp(32px,9.5vw,48px)}
+.read{text-align:center;font-size:18px;color:var(--muted)}
+.is-back .read{color:rgba(255,255,255,.82)}
+.hint{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:14px;color:var(--muted);text-align:center}
+.hint span{display:flex;align-items:center;gap:8px}
+.hint small{font-size:12px;letter-spacing:.02em}
+.hint svg,.dock svg{width:20px;height:20px;flex:none}
+.pic{position:relative;flex:1;min-height:150px;background:#fff;border-radius:18px}
+.pic img{position:absolute;inset:14px;width:calc(100% - 28px);height:calc(100% - 28px);object-fit:contain}
+/* folder screen: title, which side comes first, the "learn" button, then every word with its translation */
+.fhead{padding:6px 4px 2px}
+.ftitle{margin:0;font-size:clamp(28px,9vw,40px);font-weight:800;letter-spacing:-.03em;line-height:1.08;overflow-wrap:anywhere}
+.fsub{margin:6px 0 0;font-size:15px;color:var(--on-muted);font-variant-numeric:tabular-nums}
+.dir{display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:4px;border-radius:999px}
+.dir button{min-height:42px;border-radius:999px;font-weight:700;font-size:14px;text-align:center;transition:background-color .2s,color .2s}
+.dock .prev{width:56px}
+.dock .prev svg{width:22px;height:22px}
+.dir button[aria-pressed="true"]{background:#fff;color:var(--ink)}
+.go-learn{min-height:58px;border-radius:999px;background:#fff;color:var(--ink);font-weight:800;font-size:18px;display:flex;align-items:center;justify-content:center;gap:10px;
+  box-shadow:0 16px 30px -18px rgba(3,8,60,.8);transition:transform .18s cubic-bezier(.2,.8,.2,1),opacity .2s}
+.go-learn:active:not(:disabled){transform:scale(.97)}
+.go-learn:disabled{opacity:.5;cursor:default}
+.go-learn svg{width:20px;height:20px;color:var(--blue)}
+.wlist{border-radius:var(--r);padding:4px 14px;display:flex;flex-direction:column}
+.wrow{display:grid;grid-template-columns:1fr auto auto;align-items:center;gap:6px 10px;padding:12px 0;border-top:1px solid var(--mist)}
+.wrow:first-child{border-top:0}
+.wtext{min-width:0;display:flex;flex-direction:column;gap:2px}
+.wword{font-weight:700;font-size:18px;line-height:1.25;overflow-wrap:anywhere}
+.wword.arab{font-size:22px;line-height:1.6}
+.wread{font-weight:500;font-size:14px;color:var(--muted);margin-left:8px;white-space:nowrap}
+.wru{font-size:15px;color:#3A4160;overflow-wrap:anywhere}
+.wf.arab{font-family:var(--arabic);font-size:18px;line-height:1.6}
+.wknown{width:22px;height:22px;border-radius:50%;background:var(--blue);display:grid;place-items:center;flex:none}
+.wknown svg{width:13px;height:13px;color:#fff}
+.wdel{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;color:var(--muted);flex:none;grid-column:3;transition:background-color .2s,color .2s,transform .18s}
+.wdel:active{transform:scale(.9)}
+.wdel svg{width:19px;height:19px}
+.wdel.armed{background:var(--ink);color:#fff}
+.stamp{position:absolute;top:52px;z-index:2;padding:7px 12px;border-radius:10px;font-weight:800;font-size:14px;letter-spacing:.08em;text-transform:uppercase;opacity:0;pointer-events:none}
+.stamp.yes{left:18px;background:var(--blue);color:#fff;transform:rotate(-8deg)}
+.stamp.no{right:18px;background:var(--ink);color:#fff;transform:rotate(8deg)}
+.is-back .stamp.no{background:#fff;color:var(--ink)}
+
+.status{display:flex;align-items:center;gap:12px;font-size:13px;color:var(--on-muted);font-variant-numeric:tabular-nums;min-height:32px;padding-inline:4px}
+.meter{flex:1;min-width:40px;height:4px;border-radius:2px;background:var(--on-faint);overflow:hidden}
+.meter i{display:block;height:100%;background:#fff;border-radius:2px;width:0;transition:width .3s}
+.status button{font-weight:600;text-decoration:underline;text-underline-offset:3px;min-height:32px;color:var(--on)}
+
+.dock{display:grid;grid-template-columns:56px 1fr 1fr;gap:4px;padding:5px;width:100%;max-width:460px;margin:0 auto;border-radius:999px}
+.dock button{min-height:56px;border-radius:999px;display:flex;align-items:center;justify-content:center;gap:8px;font-weight:700;font-size:17px}
+.dock .know{background:#fff;color:var(--ink)}
+.dock .know svg{color:var(--blue)}
+.dock button:disabled{opacity:.45;cursor:default}
+.dock button:active:not(:disabled){transform:scale(.97)}
+
+/* languages sheet */
+.sheet-wrap{position:fixed;inset:0;z-index:5;display:flex;align-items:flex-end;justify-content:center;background:rgba(4,8,48,.62);
+  -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);
+  padding:calc(12px + env(safe-area-inset-top,0px)) 8px calc(8px + env(safe-area-inset-bottom,0px))}
+.sheet{width:100%;max-width:544px;max-height:92%;display:flex;flex-direction:column;gap:12px;border-radius:28px;padding:16px}
+/* the add-words dialog sits in the middle of whatever the keyboard leaves visible */
+.sheet-wrap.center{align-items:center;padding-inline:16px;padding-bottom:12px}
+.sheet-wrap.center .sheet{max-width:440px;max-height:100%;padding:18px;gap:14px;box-shadow:0 30px 70px -24px rgba(2,6,50,.9)}
+.sheet-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.sheet-head h2{margin:0 0 0 4px;font-size:22px;font-weight:800;letter-spacing:-.02em}
+.x{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;background:var(--mist)}
+.x svg{width:18px;height:18px}
+.search{position:relative}
+.search svg{position:absolute;left:14px;top:50%;width:18px;height:18px;transform:translateY(-50%);color:var(--muted);pointer-events:none}
+.search input{width:100%;min-height:48px;padding:0 14px 0 42px;border-radius:14px;border:0;background:var(--mist);color:var(--ink);font:inherit}
+.search input::placeholder{color:var(--muted)}
+.sheet-list{overflow-y:auto;display:flex;flex-direction:column;min-height:0}
+.sec{margin:10px 4px 4px;font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.row{display:grid;grid-template-columns:auto 1fr auto auto;gap:8px 12px;align-items:center;min-height:60px;padding:8px 4px;border-top:1px solid var(--mist)}
+.sec + .row{border-top:0}
+.row .dot{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;font-weight:800;font-size:13px;background:var(--blue);color:#fff}
+.row.on .dot{background:var(--ink)}
+.row .dot.flag{width:44px;height:44px;overflow:hidden;background:var(--mist);box-shadow:0 0 0 1.5px rgba(10,12,22,.14)}
+.row .dot.flag svg{width:100%;height:100%;display:block}
+.row .rtext{min-width:0}
+.row b{display:block;font-weight:700;font-size:16px;overflow-wrap:anywhere}
+.row small{display:block;font-size:13px;color:var(--muted)}
+.act{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;flex:none}
+.act svg{width:20px;height:20px}
+.act.plus{background:var(--blue);color:#fff}
+.act.minus{background:var(--mist);color:var(--ink);grid-column:4}
+.act.ghost{color:var(--muted)}
+.new{display:flex;align-items:center;gap:12px;width:100%;min-height:56px;margin-top:8px;padding:8px 14px;border-radius:16px;background:var(--mist);font-weight:700}
+.new svg{width:20px;height:20px;color:var(--blue);flex:none}
+.none{margin:16px 4px;color:var(--muted)}
+
+/* pages of folders inside a language: a strip of tabs, the last one adds a page */
+.pages{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;margin-inline:-16px;padding:4px 16px;touch-action:pan-x;overscroll-behavior:contain}
+.pages::-webkit-scrollbar{display:none}
+.tab{flex:none;min-height:44px;padding:0 16px;border-radius:999px;font-weight:700;font-size:15px;white-space:nowrap;display:inline-flex;align-items:center;gap:8px;
+  transition:transform .18s cubic-bezier(.2,.8,.2,1),background-color .2s,color .2s}
+.tab:active{transform:scale(.95)}
+.tab[aria-pressed="true"]{background:#fff;color:var(--ink);border-color:#fff}
+.tab svg{width:15px;height:15px;flex:none}
+.tab[aria-pressed="true"] svg{color:var(--blue)}
+.tab.plus{width:44px;padding:0;justify-content:center}
+.tab.plus svg{width:20px;height:20px}
+/* a folder slides left to uncover "move" and "delete" */
+.folder{touch-action:pan-y;-webkit-user-select:none;user-select:none;position:relative}
+.facts{position:absolute;right:0;top:0;bottom:0;display:flex;gap:8px;visibility:hidden;opacity:0}
+.swipe.open .facts{visibility:visible}
+.fact{width:80px;border-radius:var(--r);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-size:12px;font-weight:700;text-align:center}
+.fact svg{width:22px;height:22px}
+.fact.move{background:var(--blue-lift);box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.45)}
+.fact.rm{background:var(--ink)}
+/* folder edit mode */
+.fbar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 4px}
+.fbar .h2{margin:0}
+.edit-btn{min-height:36px;padding:0 16px;border-radius:999px;font-weight:700;font-size:14px;transition:background-color .2s,color .2s,transform .18s}
+.edit-btn:active{transform:scale(.95)}
+.edit-btn[aria-pressed="true"]{background:#fff;color:var(--ink);border-color:#fff}
+.folder.editing{cursor:pointer}
+.fname .pen{display:inline-block;width:15px;height:15px;margin-left:7px;color:var(--blue);vertical-align:-1px}
+.fname .pen svg{width:100%;height:100%}
+.grip{width:46px;height:46px;margin-right:-6px;border-radius:14px;display:grid;place-items:center;color:var(--muted);touch-action:none;cursor:grab;-webkit-user-select:none;user-select:none}
+.grip:active{background:var(--mist);color:var(--ink)}
+.grip svg{width:24px;height:24px}
+.folder.editing{position:relative}
+.folder.dragging{z-index:5;cursor:grabbing;box-shadow:0 24px 44px -16px rgba(3,8,60,.8)}
+.folder.dragging .grip{background:var(--mist);color:var(--blue)}
+#editTip{margin-top:-6px}
+.restore{align-self:center;min-height:40px;font-size:14px;font-weight:600;color:var(--on-muted);text-decoration:underline;text-underline-offset:3px}
+.pick{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;min-height:54px;padding:8px 16px;border-radius:16px;background:var(--mist);font-weight:700;font-size:16px;flex:none}
+.pick svg{width:20px;height:20px;color:var(--blue);flex:none}
+.pick:disabled{opacity:.55;cursor:default}
+.textbtn{align-self:center;min-height:40px;font-size:14px;font-weight:600;color:var(--muted);text-decoration:underline;text-underline-offset:3px;flex:none}
+
+/* adding your own words */
+.add-words{min-height:54px;border-radius:999px;display:flex;align-items:center;justify-content:center;gap:8px;font-weight:700;font-size:16px;margin-top:4px;transition:transform .18s cubic-bezier(.2,.8,.2,1)}
+.add-words:active{transform:scale(.97)}
+.add-words svg{width:20px;height:20px}
+.round.armed{background:var(--ink);border-color:var(--ink)}
+.sheet-body{overflow-y:auto;display:flex;flex-direction:column;gap:12px;min-height:0;padding:2px}
+.seg{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;padding:4px;border-radius:14px;background:var(--mist)}
+.seg button{min-height:40px;border-radius:10px;font-weight:700;font-size:15px;color:var(--muted);text-align:center;transition:background-color .2s,color .2s}
+.seg button[aria-pressed="true"]{background:#fff;color:var(--ink);box-shadow:0 1px 3px rgba(10,12,22,.16)}
+.field{display:flex;flex-direction:column;gap:6px}
+.field label{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);padding-left:4px}
+.field input,.field textarea{width:100%;min-height:48px;padding:12px 14px;border-radius:14px;border:0;background:var(--mist);color:var(--ink);font:inherit}
+.field textarea{min-height:132px;resize:none;line-height:1.5}
+.field input:focus,.field textarea:focus{outline:2px solid var(--blue);outline-offset:0}
+.field input::placeholder,.field textarea::placeholder{color:#8A91AD}
+.help{margin:0 4px;font-size:13px;color:var(--muted)}
+.help b{color:var(--blue);font-weight:700}
+.cta{min-height:54px;border-radius:999px;background:var(--blue);color:#fff;font-weight:700;font-size:16px;text-align:center;flex:none;transition:transform .18s cubic-bezier(.2,.8,.2,1),opacity .2s}
+.cta:active:not(:disabled){transform:scale(.97)}
+.cta:disabled{opacity:.4;cursor:default}
+
+/* motion: one easing for everything that opens, closes or is pressed */
+.round,.nav-back,.act,.x,.go,.new,.dock button,.note button,.folder{transition:transform .18s cubic-bezier(.2,.8,.2,1),background-color .2s,opacity .2s}
+.round:active,.nav-back:active,.act:active,.x:active,.new:active,.note button:active{transform:scale(.93)}
+.lang-btn:active .go{transform:scale(.88)}
+.ring .pr{transition:stroke-dasharray .8s cubic-bezier(.2,.8,.2,1)}
+.meter i{transition:width .55s cubic-bezier(.2,.8,.2,1)}
+.card{transition:background-color .25s,color .25s}
+
+@media (max-width:340px){ .badge{width:60px;height:60px} .sig{display:none} }
+@media (prefers-reduced-motion: reduce){ .meter i,.folder,.ring .pr,.card,.round,.nav-back,.act,.x,.go,.new,.dock button,.note button{transition:none} }
+</style>
+
+<div class="bg" id="bg" aria-hidden="true"><b class="g1" id="g1">a</b><b class="g2" id="g2">я</b></div>
+
+<div class="scroll" id="scroll">
+<div id="app">
+  <!-- 1. Главное меню -->
+  <section class="view" id="vHome">
+    <header class="home-head">
+      <div>
+        <p class="motto" lang="en">by student for students</p>
+        <h1 class="brand" aria-label="Linguaaa">Lingu<span>a</span><span>a</span><span>a</span></h1>
+        <p class="sub" id="homeSub">Выберите язык</p>
+      </div>
+      <div class="head-tools">
+        <div class="chip glass" id="homeChip" hidden></div>
+        <button type="button" class="round glass" id="addLang" aria-label="Языки: добавить или удалить">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+        </button>
+      </div>
+    </header>
+    <div class="lang-list" id="langList"></div>
+    <p class="tip" id="swipeTip">Чтобы убрать язык, смахните его влево.</p>
+    <p class="tip ver" id="ver"></p>
+  </section>
+
+  <!-- 2. Темы языка -->
+  <section class="view" id="vTopics" hidden>
+    <div class="bar">
+      <button type="button" class="nav-back glass" id="toHome">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>
+        Языки
+      </button>
+    </div>
+    <div class="hero" id="hero"></div>
+    <nav class="pages" id="pages" aria-label="Страницы с папками"></nav>
+    <div class="fbar" id="fbar">
+      <h2 class="h2">Папки</h2>
+      <button type="button" class="edit-btn glass" id="editFolders" aria-pressed="false">Изменить</button>
+    </div>
+    <p class="tip" id="editTip" hidden>Потяните папку за полоски справа, чтобы поменять порядок. Нажмите на папку, чтобы переименовать.</p>
+    <div class="folders" id="folders"></div>
+    <div class="note panel" id="topicsNote" hidden>
+      <h2 id="tnTitle"></h2>
+      <p id="tnText"></p>
+    </div>
+    <button type="button" class="add-words glass" id="addWords">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+      Добавить слова
+    </button>
+    <button type="button" class="share-words glass" id="shareBtn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V4M8 8l4-4 4 4M5 13v6h14v-6"/></svg>
+      Поделиться папками
+    </button>
+    <button type="button" class="restore" id="restoreFolders" hidden></button>
+  </section>
+
+  <!-- 3. Папка: список слов -->
+  <section class="view" id="vFolder" hidden>
+    <div class="bar">
+      <button type="button" class="nav-back glass" id="toTopics">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>
+        Темы
+      </button>
+      <div class="bar-title" id="folderLang"></div>
+    </div>
+    <div class="fhead">
+      <h2 class="ftitle" id="folderTitle"></h2>
+      <p class="fsub" id="folderSub"></p>
+    </div>
+    <div class="dir glass" role="group" aria-label="Какая сторона карточки показывается первой">
+      <button type="button" id="dirA" aria-pressed="true">Русский → слово</button>
+      <button type="button" id="dirB" aria-pressed="false">Слово → русский</button>
+    </div>
+    <button type="button" class="go-learn" id="startTrain">
+      <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4.500v15l12.500-7.500z"/></svg>
+      <span id="startLabel">Учить</span>
+    </button>
+    <div class="wlist panel" id="wordList"></div>
+    <div class="note panel" id="folderNote" hidden>
+      <h2>В папке пусто</h2>
+      <p>Добавьте слова кнопкой ниже.</p>
+    </div>
+    <button type="button" class="add-words glass" id="addWords2">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+      Добавить слова
+    </button>
+    <button type="button" class="restore" id="restoreWords" hidden></button>
+  </section>
+
+  <!-- 4. Тренировка -->
+  <section class="view" id="vTrain" hidden>
+    <div class="bar">
+      <button type="button" class="nav-back glass" id="toFolder">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>
+        Слова
+      </button>
+      <div class="bar-title" id="trainTitle"></div>
+      <button type="button" class="round glass" id="swapSides" aria-label="Поменять стороны карточек">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h14M14 4l4 4-4 4M20 16H6M10 12l-4 4 4 4"/></svg>
+      </button>
+      <button type="button" class="round glass" id="delCard" hidden aria-label="Удалить это слово">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-12M9 7V4h6v3"/></svg>
+      </button>
+    </div>
+    <main class="stage">
+      <div class="card panel" id="card" role="button" tabindex="0" aria-label="Карточка. Нажмите, чтобы перевернуть. Смахните вправо, если знаете слово, влево — чтобы повторить" hidden>
+        <span class="stamp yes" id="stYes">Знаю</span>
+        <span class="stamp no" id="stNo">Повторить</span>
+        <div class="side" id="sideFront">
+          <div class="meta"><span id="fLabel">По-русски</span><span id="fTopic"></span></div>
+          <div class="mid"><div class="big" id="ru"></div><div class="read" id="fRead" hidden></div></div>
+          <div class="hint">
+            <span>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12a8 8 0 0 1 14-5.3M20 12a8 8 0 0 1-14 5.3"/><path d="M18 3v4h-4M6 21v-4h4"/></svg>
+              Нажмите, чтобы перевернуть
+            </span>
+            <small>Смахните: влево — повторить, вправо — знаю</small>
+          </div>
+        </div>
+        <div class="side" id="sideBack" hidden>
+          <div class="meta"><span id="bLang"></span><span id="bTopic"></span></div>
+          <div class="pic" id="pic"><img id="img" alt="" draggable="false"></div>
+          <div class="mid"><div class="big" id="word"></div><div class="read" id="read"></div></div>
+        </div>
+      </div>
+      <div class="note panel" id="note">
+        <h2 id="noteTitle"></h2>
+        <p id="noteText"></p>
+        <button type="button" id="noteBtn" hidden>Учить заново</button>
+      </div>
+    </main>
+    <div class="status">
+      <span id="left"></span>
+      <div class="meter" aria-hidden="true"><i id="barFill"></i></div>
+      <button type="button" id="reset" hidden>Сбросить</button>
+    </div>
+    <div class="dock glass">
+      <button type="button" id="prevWord" class="prev" disabled aria-label="Вернуться к прошлому слову">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 14L4 9l5-5"/><path d="M4 9h10.500a5.500 5.500 0 0 1 0 11H11"/></svg>
+      </button>
+      <button type="button" id="again" disabled>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12a7 7 0 1 0 2.2-5.1"/><path d="M5 4v4h4"/></svg>
+        Повторить
+      </button>
+      <button type="button" id="know" class="know" disabled>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>
+        Знаю
+      </button>
+    </div>
+  </section>
+</div>
+</div>
+
+<!-- Языки: поиск, добавление, удаление -->
+<div class="sheet-wrap" id="sheetWrap" hidden>
+  <div class="sheet panel" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
+    <div class="sheet-head">
+      <h2 id="sheetTitle">Языки</h2>
+      <button type="button" class="x" id="sheetClose" aria-label="Закрыть">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+    </div>
+    <div class="search">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.500 4.500"/></svg>
+      <input id="langSearch" type="search" maxlength="30" autocomplete="off" placeholder="Найти или добавить свой язык" aria-label="Поиск языка">
+    </div>
+    <div class="sheet-list" id="sheetList"></div>
+  </div>
+</div>
+
+<!-- Небольшое окно: название страницы, перенос папки -->
+<div class="sheet-wrap center" id="dlgWrap" hidden>
+  <div class="sheet panel" role="dialog" aria-modal="true" aria-labelledby="dlgTitle">
+    <div class="sheet-head">
+      <h2 id="dlgTitle"></h2>
+      <button type="button" class="x" id="dlgClose" aria-label="Закрыть">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+    </div>
+    <div class="sheet-body" id="dlgBody"></div>
+  </div>
+</div>
+
+<!-- Свои слова: списком или по одному -->
+<div class="sheet-wrap center" id="addWrap" hidden>
+  <div class="sheet panel" role="dialog" aria-modal="true" aria-labelledby="addTitle">
+    <div class="sheet-head">
+      <h2 id="addTitle">Новые слова</h2>
+      <button type="button" class="x" id="addClose" aria-label="Закрыть">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+    </div>
+    <div class="seg" role="group" aria-label="Способ добавления">
+      <button type="button" id="modeList" aria-pressed="true">Списком</button>
+      <button type="button" id="modeOne" aria-pressed="false">По одному</button>
+      <button type="button" id="modeCode" aria-pressed="false">По коду</button>
+    </div>
+    <div class="sheet-body">
+      <div class="field" id="folderField">
+        <label for="addTopic">Папка</label>
+        <input id="addTopic" type="text" maxlength="40" autocomplete="off" list="topicList" placeholder="Например: Еда">
+        <datalist id="topicList"></datalist>
+      </div>
+      <div id="paneList">
+        <div class="field">
+          <label for="addText" id="addTextLabel">Слова</label>
+          <textarea id="addText" dir="auto" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="casa - дом&#10;perro - собака&#10;libro - книга - либро"></textarea>
+        </div>
+      </div>
+      <div id="paneOne" hidden>
+        <div class="field">
+          <label for="addWord" id="addWordLabel">Слово</label>
+          <input id="addWord" type="text" dir="auto" maxlength="60" autocomplete="off" autocapitalize="off" spellcheck="false">
+        </div>
+        <div class="field" style="margin-top:12px">
+          <label for="addRu">Перевод на русский</label>
+          <input id="addRu" type="text" maxlength="80" autocomplete="off">
+        </div>
+        <div class="field" style="margin-top:12px">
+          <label for="addRead">Чтение русскими буквами (необязательно)</label>
+          <input id="addRead" type="text" maxlength="60" autocomplete="off">
+        </div>
+      </div>
+      <div id="paneCode" hidden>
+        <div class="field">
+          <label for="importCode">Код от друга</label>
+          <textarea id="importCode" class="code" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="Вставьте сюда код, который вам прислали. Он начинается с LNG1"></textarea>
+        </div>
+      </div>
+      <p class="help" id="addHelp"></p>
+    </div>
+    <button type="button" class="cta" id="addSave" disabled>Добавить</button>
+  </div>
+</div>
+
+<script>
+(function(){
+  function rep(n,fn){var s='';for(var i=0;i<n;i++)s+=fn(i);return s}
+  var S='<svg viewBox="0 0 80 80" aria-hidden="true">';
+  /* built-in illustrations, keyed by language id */
+  var ART={
+    en:S+'<rect width="80" height="80" fill="#1F3A8A"/><path d="M0 0L80 80M80 0L0 80" stroke="#fff" stroke-width="12"/><path d="M0 0L80 80M80 0L0 80" stroke="#D42B3A" stroke-width="4"/><path d="M40 0V80M0 40H80" stroke="#fff" stroke-width="18"/><path d="M40 0V80M0 40H80" stroke="#D42B3A" stroke-width="10"/>'+
+       '<rect x="31" y="44" width="18" height="40" fill="#C99A5B"/><path d="M35.5 50v30M40 50v30M44.5 50v30" stroke="#8F6630" stroke-width="1.5"/><rect x="29" y="26" width="22" height="20" fill="#A87838"/><circle cx="40" cy="36" r="7" fill="#FFF8E7"/><path d="M40 36V31.5M40 36h3.5" stroke="#10171E" stroke-width="1.5" stroke-linecap="round"/><polygon points="29,26 40,7 51,26" fill="#2B3650"/></svg>',
+    ar:S+'<rect width="80" height="80" fill="#0C4A38"/><circle cx="56" cy="20" r="10" fill="#E3BF63"/><circle cx="60" cy="17" r="9" fill="#0C4A38"/><g fill="#E3BF63"><path d="M26 56a14 14 0 0 1 28 0z"/><rect x="39" y="36" width="2" height="8"/><rect x="20" y="56" width="40" height="26"/><rect x="11" y="36" width="6" height="46"/><polygon points="11,36 14,27 17,36"/><rect x="63" y="36" width="6" height="46"/><polygon points="63,36 66,27 69,36"/></g><path d="M35 82V68a5 5 0 0 1 10 0v14z" fill="#0C4A38"/></svg>',
+    fr:S+'<rect width="80" height="80" fill="#1B2440"/><path d="M40 12l4 28 9 34h-7q-6-16-12 0h-7l9-34z" fill="#B4BDCC"/><rect x="33" y="38" width="14" height="3" fill="#6F7B90"/><rect x="29" y="55" width="22" height="3" fill="#6F7B90"/><ellipse cx="24" cy="24" rx="11" ry="6" fill="#D42B3A"/><rect x="23" y="15" width="2" height="4" fill="#D42B3A"/><path d="M53 28a9 9 0 0 1 16 2" fill="none" stroke="#E0A14A" stroke-width="6" stroke-linecap="round"/></svg>',
+    ms:S+'<rect width="80" height="80" fill="#4E5118"/><g transform="translate(30 36)">'+rep(5,function(i){return '<ellipse cx="0" cy="-12" rx="8.5" ry="12" fill="#E2362F" transform="rotate('+i*72+')"/>'})+'<circle r="5" fill="#A51A21"/><path d="M0 0L9 -13" stroke="#F2C230" stroke-width="2.5" stroke-linecap="round"/><circle cx="9.5" cy="-14" r="2.6" fill="#F2C230"/></g><g transform="translate(57 48) rotate(22)"><path d="M-3 10q-4-8 1-14q5-6 0-12q-3-6 2-14q4 8 2 14q4 6 0 12q-4 6 1 14z" fill="#E6E9EE"/><rect x="-7" y="10" width="14" height="3" fill="#D9B45A"/><rect x="-2.5" y="13" width="5" height="12" rx="2" fill="#6B3F1D"/></g></svg>',
+    es:S+'<rect width="80" height="80" fill="#82200F"/><g transform="translate(57 30)"><path d="M-17 0a17 17 0 0 1 34 0z" fill="#F2B90C"/><path d="M0 0L-15 -8M0 0L-9 -14.5M0 0V-17M0 0L9 -14.5M0 0L15 -8" stroke="#C1442B" stroke-width="1.6"/><circle r="2.5" fill="#6B3F1D"/></g><g transform="translate(30 48) rotate(32)"><rect x="-2.5" y="-36" width="5" height="30" fill="#6B3F1D"/><rect x="-4" y="-42" width="8" height="8" rx="1.5" fill="#3A2210"/><circle cy="-3" r="9.5" fill="#E09A3A"/><circle cy="11" r="13" fill="#E09A3A"/><circle cy="3" r="4.2" fill="#4A2A10"/><rect x="-5" y="13" width="10" height="2.2" fill="#4A2A10"/></g></svg>'
+  };
+  /* simplified country flags (no coats of arms), drawn on a 40x40 square and clipped to a circle by CSS */
+  function star(cx,cy,R,fill,rot){
+    var p=[],a0=(rot==null?-90:rot)*Math.PI/180;
+    for(var i=0;i<10;i++){var r=i%2?R*0.4:R,a=a0+i*Math.PI/5;p.push((cx+r*Math.cos(a)).toFixed(2)+','+(cy+r*Math.sin(a)).toFixed(2))}
+    return '<polygon points="'+p.join(' ')+'" fill="'+fill+'"/>';
+  }
+  function bands(colors,vertical){
+    var n=colors.length,s=40/n;
+    return rep(n,function(i){return vertical?'<rect x="'+(i*s-0.1)+'" width="'+(s+0.2)+'" height="40" fill="'+colors[i]+'"/>':'<rect y="'+(i*s-0.1)+'" width="40" height="'+(s+0.2)+'" fill="'+colors[i]+'"/>'});
+  }
+  var FLAGS={
+    en:'<rect width="40" height="40" fill="#012169"/><path d="M0 0L40 40M40 0L0 40" stroke="#fff" stroke-width="7"/><path d="M0 0L40 40M40 0L0 40" stroke="#C8102E" stroke-width="2.5"/><path d="M20 0V40M0 20H40" stroke="#fff" stroke-width="11"/><path d="M20 0V40M0 20H40" stroke="#C8102E" stroke-width="6"/>',
+    ar:bands(['#00732F','#fff','#000'])+'<rect width="12" height="40" fill="#FF0000"/>',
+    fr:bands(['#0055A4','#fff','#EF4135'],true),
+    ms:rep(14,function(i){return '<rect y="'+(i*2.857).toFixed(2)+'" width="40" height="2.9" fill="'+(i%2?'#fff':'#CC0001')+'"/>'})+'<rect width="22" height="22.86" fill="#010066"/><circle cx="9" cy="11.4" r="6.4" fill="#FFCC00"/><circle cx="10.8" cy="11.4" r="5.4" fill="#010066"/>'+rep(7,function(i){return '<polygon points="15.8,7.4 16.7,11.4 15.8,15.4 14.9,11.4" fill="#FFCC00" transform="rotate('+(i*25.71).toFixed(1)+' 15.8 11.4)"/>'}),
+    es:'<rect width="40" height="40" fill="#AA151B"/><rect y="10" width="40" height="20" fill="#F1BF00"/>',
+    de:bands(['#000','#DD0000','#FFCE00']),
+    it:bands(['#009246','#fff','#CE2B37'],true),
+    pt:'<rect width="40" height="40" fill="#DA291C"/><rect width="16" height="40" fill="#046A38"/><circle cx="16" cy="20" r="6.5" fill="#FFE900"/><path d="M13 16.500h6v4.500a3 3 0 0 1-6 0z" fill="#fff" stroke="#DA291C" stroke-width="1.2"/>',
+    tr:'<rect width="40" height="40" fill="#E30A17"/><circle cx="15" cy="20" r="8" fill="#fff"/><circle cx="17.2" cy="20" r="6.4" fill="#E30A17"/>'+star(25.5,20,3.6,'#fff',180),
+    zh:'<rect width="40" height="40" fill="#EE1C25"/>'+star(11,13,6,'#FFFF00')+star(20,6,2,'#FFFF00')+star(24,10.5,2,'#FFFF00')+star(24,16.5,2,'#FFFF00')+star(20,21,2,'#FFFF00'),
+    ja:'<rect width="40" height="40" fill="#fff"/><circle cx="20" cy="20" r="9.5" fill="#BC002D"/>',
+    ko:'<rect width="40" height="40" fill="#fff"/><g transform="rotate(33.7 20 20)"><path d="M11 20a9 9 0 0 1 18 0a4.500 4.500 0 0 1-9 0a4.500 4.500 0 0 0-9 0z" fill="#CD2E3A"/><path d="M29 20a9 9 0 0 1-18 0a4.500 4.500 0 0 1 9 0a4.500 4.500 0 0 0 9 0z" fill="#0047A0"/></g>'+
+       rep(4,function(k){var x=k%2?32.5:7.5,y=k<2?8:32,a=(k===0||k===3)?-56:56;return '<g transform="translate('+x+' '+y+') rotate('+a+')" fill="#000">'+rep(3,function(j){return '<rect x="-3.6" y="'+(-2.6+j*2)+'" width="7.2" height="1.2"/>'})+'</g>'}),
+    fa:bands(['#239F40','#fff','#DA0000'])+'<path d="M20 16.500v7M17.500 18a3 3 0 0 0 2.500 5a3 3 0 0 0 2.500-5" fill="none" stroke="#DA0000" stroke-width="1.3" stroke-linecap="round"/>',
+    id:bands(['#CE1126','#fff']),
+    kk:'<rect width="40" height="40" fill="#00AFCA"/><rect x="3.500" y="3" width="2.500" height="34" fill="#FEC50C"/><circle cx="22" cy="16" r="5.500" fill="#FEC50C"/>'+rep(12,function(i){return '<rect x="21.6" y="7.500" width=".8" height="2.2" fill="#FEC50C" transform="rotate('+i*30+' 22 16)"/>'})+'<path d="M11 24q11 7 22 0q-11 3-22 0z" fill="#FEC50C"/>',
+    uz:'<rect width="40" height="40" fill="#fff"/><rect width="40" height="12.500" fill="#0099B5"/><rect y="12.500" width="40" height="1" fill="#CE1126"/><rect y="26.500" width="40" height="1" fill="#CE1126"/><rect y="27.500" width="40" height="12.500" fill="#1EB53A"/><circle cx="8" cy="6.500" r="3.6" fill="#fff"/><circle cx="9.400" cy="6.500" r="3" fill="#0099B5"/>'+rep(3,function(r){return rep(r+3,function(c){return '<circle cx="'+(24-c*2.6)+'" cy="'+(3.5+r*2.6)+'" r=".8" fill="#fff"/>'})})
+  };
+  FLAGS.tt='<rect width="40" height="40" fill="#DA291C"/><rect width="40" height="18.7" fill="#007A3D"/><rect y="18.7" width="40" height="2.6" fill="#fff"/>';
+  function flag(id){return '<svg viewBox="0 0 40 40" aria-hidden="true">'+FLAGS[id]+'</svg>'}
+
+  /* every language the sheet offers; the first five are the starting set; g is the letter drawn large behind the screens */
+  var PRESETS=[
+    {id:'en',name:'Английский',endo:'English',g:'th'},
+    {id:'ar',name:'Арабский',endo:'العربية',g:'ض',arab:true},
+    {id:'fr',name:'Французский',endo:'Français',g:'ç'},
+    {id:'ms',name:'Малайский',endo:'Bahasa Melayu',g:'ny'},
+    {id:'es',name:'Испанский',endo:'Español',g:'ñ'},
+    {id:'de',name:'Немецкий',endo:'Deutsch',g:'ß'},
+    {id:'it',name:'Итальянский',endo:'Italiano',g:'gl'},
+    {id:'pt',name:'Португальский',endo:'Português',g:'ã'},
+    {id:'tr',name:'Турецкий',endo:'Türkçe',g:'ğ'},
+    {id:'zh',name:'Китайский',endo:'中文',g:'文'},
+    {id:'ja',name:'Японский',endo:'日本語',g:'あ'},
+    {id:'ko',name:'Корейский',endo:'한국어',g:'한'},
+    {id:'fa',name:'Персидский',endo:'فارسی',g:'پ',arab:true},
+    {id:'id',name:'Индонезийский',endo:'Bahasa Indonesia',g:'ng'},
+    {id:'kk',name:'Казахский',endo:'Қазақша',g:'қ'},
+    {id:'uz',name:'Узбекский',endo:'Oʻzbekcha',g:'oʻ'},
+    {id:'tt',name:'Татарский',endo:'Татарча',g:'ә'}
+  ];
+  var CHEV='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg>';
+  var CHECK='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+  var PLUS='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>';
+  var MINUS='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14"/></svg>';
+  var TRASH='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-12M9 7V4h6v3"/></svg>';
+  var MOVE='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12h15M13 6l6 6-6 6"/></svg>';
+  var PENCIL='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20l1-4.500L16.500 4l3.500 3.500L8.500 19z"/></svg>';
+  var FOLDER='<svg viewBox="0 0 24 20" aria-hidden="true"><path d="M1 3.5A2.5 2.5 0 0 1 3.5 1H9l2.5 3h9A2.5 2.5 0 0 1 23 6.500V8H1z" fill="#1437F5" opacity=".5"/><rect x="1" y="6.500" width="22" height="12.500" rx="2.500" fill="#1437F5"/></svg>';
+
+  var $=function(id){return document.getElementById(id)};
+  var store={
+    get:function(k,d){try{var v=localStorage.getItem('slovnik.'+k);return v==null?d:JSON.parse(v)}catch(e){return d}},
+    set:function(k,v){try{localStorage.setItem('slovnik.'+k,JSON.stringify(v))}catch(e){}}
+  };
+  var reduce=false;try{reduce=window.matchMedia('(prefers-reduced-motion: reduce)').matches}catch(e){}
+  var IDRE=/^[a-z0-9-]{1,24}$/i;
+  function cleanLangs(list){
+    if(!Array.isArray(list))return null;
+    var seen={},out=[];
+    list.forEach(function(l){
+      if(!l||typeof l.id!=='string'||!IDRE.test(l.id)||seen[l.id])return;
+      var name=String(l.name||'').slice(0,40);if(!name)return;
+      seen[l.id]=1;
+      out.push({id:l.id,name:name,endo:String(l.endo||name).slice(0,40),arab:!!l.arab});
+    });
+    return out;
+  }
+  function cleanIds(list){return Array.isArray(list)?list.filter(function(x){return typeof x==='string'&&IDRE.test(x)}):[]}
+  function preset(id){for(var i=0;i<PRESETS.length;i++)if(PRESETS[i].id===id)return PRESETS[i];return null}
+
+  var langs=cleanLangs(store.get('langs',null))||cleanLangs(PRESETS.slice(0,5));
+  var removed=cleanLangs(store.get('removed',[]))||[];   /* own languages taken off the menu */
+  var hidden=cleanIds(store.get('hidden',[]));           /* languages deleted from the sheet's list */
+  /* a language added to the app later joins the menu once; after that the person's own choice stands */
+  ['tt'].forEach(function(id){
+    if(store.get('seen.'+id,0))return;
+    store.set('seen.'+id,1);
+    if(hidden.indexOf(id)<0&&!langs.some(function(l){return l.id===id})){langs.push(cleanLangs([preset(id)])[0]);store.set('langs',langs)}
+  });
+  /* cards = the ones shipped with the app + the ones this person added on this device */
+  function cleanCards(list){
+    if(!Array.isArray(list))return [];
+    return list.filter(function(c){return c&&typeof c.id==='string'&&typeof c.lang==='string'&&c.ru&&c.word}).map(function(c){
+      return {id:c.id,lang:c.lang,topic:String(c.topic||'Мои слова').slice(0,40),ru:String(c.ru).slice(0,80),word:String(c.word).slice(0,60),read:c.read?String(c.read).slice(0,60):'',mine:true};
+    });
+  }
+  var base=[],mine=cleanCards(store.get('mine',[]));
+  var cards=mine.slice(),loaded=false,failed=false;
+  function merge(){cards=base.concat(mine)}
+  var view='home';
+  var lastLang=store.get('lang',''),lang=lastLang,topic='';
+  var known=store.get('known',{})||{};
+  var sessionMarks={},progressRef=null,saving=false,dirty=false;
+  var settingsRef=null,savingS=false,dirtyS=false;
+  var queue=[],shownId=null,resetArmed=false,isBack=false,busy=false,openRow=null;
+
+  function L(id){
+    for(var i=0;i<langs.length;i++)if(langs[i].id===id)return langs[i];
+    for(i=0;i<removed.length;i++)if(removed[i].id===id)return removed[i];
+    return preset(id)||{id:id,name:id,endo:id};
+  }
+  function active(id){return langs.some(function(l){return l.id===id})}
+  function glyph(l){var p=preset(l.id);return p?p.g:l.name.slice(0,1).toUpperCase()}
+  function byId(id){for(var i=0;i<cards.length;i++)if(cards[i].id===id)return cards[i];return null}
+  /* Folders of a language sit on pages ("Тема 1", "Тема 2", ...) the person can add and rename.
+     pages: lang -> [{id,name}], fpage: lang -> {folder: pageId}, hfold: lang -> [deleted built-in folders].
+     All three live on this device only. */
+  function obj(v){return v&&typeof v==='object'&&!Array.isArray(v)?v:{}}
+  var pages=obj(store.get('pages',{})),fpage=obj(store.get('fpage',{})),hfold=obj(store.get('hfold',{}));
+  var pageId=null,lastPage={};
+  /* falias: lang -> {folder: name the person gave it}; forder: lang -> [folders in the order the person set] */
+  var falias=obj(store.get('falias',{})),forder=obj(store.get('forder',{}));
+  function savePages(){
+    store.set('pages',pages);store.set('fpage',fpage);store.set('hfold',hfold);
+    store.set('falias',falias);store.set('forder',forder);
+  }
+  /* a folder keeps its original name inside; this is the name people see */
+  function shown(l,t){return obj(falias[l])[t]||t}
+  /* the other way round: a name typed by a person -> the folder it belongs to */
+  function inner(l,name){
+    var a=obj(falias[l]),q=String(name).toLowerCase();
+    for(var k in a)if(String(a[k]).toLowerCase()===q)return k;
+    return name;
+  }
+  function sortFolders(l,names){
+    var o=Array.isArray(forder[l])?forder[l]:[];
+    return names.slice().sort(function(a,b){
+      var ia=o.indexOf(a),ib=o.indexOf(b);if(ia<0)ia=1e6;if(ib<0)ib=1e6;
+      return ia-ib||shown(l,a).localeCompare(shown(l,b),'ru');
+    });
+  }
+  function getPages(l){var p=pages[l];return Array.isArray(p)&&p.length?p:[{id:'p1',name:'Тема 1'}]}
+  function ownPages(l){if(!Array.isArray(pages[l])||!pages[l].length)pages[l]=getPages(l).slice();return pages[l]}
+  function pageOf(l,name){
+    var id=obj(fpage[l])[name],ps=getPages(l);
+    return ps.some(function(p){return p.id===id})?id:ps[0].id;
+  }
+  function curPage(){
+    var ps=getPages(lang);
+    if(!ps.some(function(p){return p.id===pageId}))pageId=ps[0].id;
+    return pageId;
+  }
+  function tname(c){return c.topic||'Без темы'}
+  /* hword: built-in words this person deleted (own words are simply removed); rev: foreign word first, Russian on the back */
+  var hword=obj(store.get('hword',{})),rev=!!store.get('rev',false);
+  function lostFolder(c){var h=hfold[c.lang];return Array.isArray(h)&&h.indexOf(tname(c))>=0}
+  function gone(c){return !!hword[c.id]||lostFolder(c)}
+  function ofLang(id){return cards.filter(function(c){return c.lang===id&&!gone(c)})}
+  function pool(){
+    var cur=curPage();
+    return ofLang(lang).filter(function(c){return topic?tname(c)===topic:pageOf(lang,tname(c))===cur});
+  }
+  function shuffle(a){for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t}return a}
+  function rebuild(fresh){
+    var ids=pool().filter(function(c){return !known[c.id]}).map(function(c){return c.id});
+    if(fresh){queue=shuffle(ids);return}
+    var keep=queue.filter(function(id){return ids.indexOf(id)>=0});
+    queue=keep.concat(shuffle(ids.filter(function(id){return keep.indexOf(id)<0})));
+  }
+  function persist(){
+    store.set('known',known);
+    if(!progressRef)return;
+    if(saving){dirty=true;return}
+    saving=true;
+    (function loop(){
+      dirty=false;
+      progressRef.set({known:known}).then(function(){
+        if(dirty)loop();else saving=false;
+      },function(){saving=false;progressRef=null});
+    })();
+  }
+  function saveLangs(){
+    store.set('langs',langs);store.set('removed',removed);store.set('hidden',hidden);
+    if(!settingsRef)return;
+    if(savingS){dirtyS=true;return}
+    savingS=true;
+    (function loop(){
+      dirtyS=false;
+      settingsRef.set({list:langs,removed:removed,hidden:hidden}).then(function(){
+        if(dirtyS)loop();else savingS=false;
+      },function(){savingS=false;settingsRef=null});
+    })();
+  }
+  function mark(id,val){
+    if(val)known[id]=1;else delete known[id];
+    sessionMarks[id]=val;
+  }
+  function plural(n,a,b,c){var m=n%100,k=n%10;if(m>10&&m<20)return c;if(k===1)return a;if(k>1&&k<5)return b;return c}
+  function words(n){return n+' '+plural(n,'слово','слова','слов')}
+  function el(tag,cls,text){var e=document.createElement(tag);if(cls)e.className=cls;if(text!=null)e.textContent=text;return e}
+  function code(l){return preset(l.id)?l.id.toUpperCase():l.name.slice(0,2).toUpperCase()}
+  function langText(l,extra){
+    var box=el('span','lang-text'),e=el('span','endo',l.endo);
+    if(l.arab){e.classList.add('arab');e.dir='rtl';e.style.textAlign='left'}
+    box.appendChild(e);
+    var sub=l.endo===l.name?'':l.name;
+    box.appendChild(el('span','ru-name',sub+(sub&&extra?' · ':'')+(extra||'')));
+    return box;
+  }
+  function badge(l){
+    var b=el('span','badge');
+    if(ART[l.id])b.innerHTML=ART[l.id];
+    else if(FLAGS[l.id])b.innerHTML=flag(l.id);
+    else{b.classList.add('code');b.textContent=code(l)}
+    return b;
+  }
+
+  /* --- motion helpers --- */
+  var EASE='cubic-bezier(.2,.8,.2,1)',entering=true,leaving=false;
+  function anim(node,frames,ms,opts){
+    if(reduce||!node.animate)return null;
+    var o={duration:ms,easing:EASE};if(opts)for(var k in opts)o[k]=opts[k];
+    return node.animate(frames,o);
+  }
+  /* run fn when the animation ends; the timer covers an animation that never reports back */
+  function after(a,ms,fn){
+    var ran=false;
+    function run(){if(ran)return;ran=true;fn()}
+    if(!a){fn();return}
+    a.onfinish=run;setTimeout(run,ms+350);
+  }
+  function stagger(nodes){
+    Array.prototype.forEach.call(nodes,function(n,i){
+      anim(n,[{opacity:0,transform:'translateY(16px)'},{opacity:1,transform:'none'}],420,{delay:40+Math.min(i,10)*50,fill:'backwards'});
+    });
+  }
+  /* collapse a list item, then run done */
+  function vanish(node,gap,done){
+    var cs=getComputedStyle(node);
+    var a=anim(node,[
+      {height:node.offsetHeight+'px',minHeight:'0px',paddingTop:cs.paddingTop,paddingBottom:cs.paddingBottom,opacity:1,marginBottom:'0px'},
+      {height:'0px',minHeight:'0px',paddingTop:'0px',paddingBottom:'0px',opacity:0,marginBottom:-gap+'px'}
+    ],300,{fill:'forwards'});
+    if(a)node.style.overflow='hidden';
+    after(a,300,done);
+  }
+  var VIEWS={home:'vHome',topics:'vTopics',folder:'vFolder',train:'vTrain'},ORDER={home:0,topics:1,folder:2,train:3};
+  function go(v){
+    if(leaving)return;
+    var dir=ORDER[v]>=ORDER[view]?1:-1,from=$(VIEWS[view]);
+    var out=v===view?null:anim(from,[{opacity:1,transform:'none'},{opacity:0,transform:'translateX('+(-dir*22)+'px)'}],140,{easing:'ease-in',fill:'forwards'});
+    function swap(){
+      leaving=false;view=v;resetArmed=false;editing=false;
+      if(openRow)openRow.close();
+      entering=true;render();entering=false;$('scroll').scrollTop=0;
+      if(out)out.cancel();
+      anim($(VIEWS[view]),[{opacity:0,transform:'translateX('+dir*32+'px)'},{opacity:1,transform:'none'}],380);
+    }
+    leaving=!!out;after(out,140,swap);
+  }
+
+  /* --- languages: add, take off the menu, delete from the list --- */
+  function addLang(entry){
+    if(active(entry.id))return;
+    langs.push(cleanLangs([entry])[0]);
+    removed=removed.filter(function(l){return l.id!==entry.id});
+    hidden=hidden.filter(function(id){return id!==entry.id});
+    saveLangs();render();
+  }
+  function removeLang(id){
+    var l=L(id);
+    langs=langs.filter(function(x){return x.id!==id});
+    if(!preset(id)&&!removed.some(function(x){return x.id===id}))removed.push(l);
+    openRow=null;saveLangs();render();
+  }
+  function dropLang(id){
+    if(hidden.indexOf(id)<0)hidden.push(id);
+    saveLangs();
+  }
+  function addByName(name){
+    var q=name.toLowerCase();
+    var same=langs.concat(removed,PRESETS).filter(function(l){return l.name.toLowerCase()===q||l.endo.toLowerCase()===q})[0];
+    addLang(same||{id:'x'+Date.now().toString(36),name:name,endo:name});
+  }
+  function act(cls,label,icon,fn){
+    var b=el('button','act '+cls);b.type='button';b.setAttribute('aria-label',label);b.innerHTML=icon;
+    b.addEventListener('click',fn);return b;
+  }
+  function sheetRow(l,on){
+    var r=el('div','row'+(on?' on':''));
+    var dot=el('span','dot');
+    if(FLAGS[l.id]){dot.classList.add('flag');dot.innerHTML=flag(l.id)}else dot.textContent=code(l);
+    r.appendChild(dot);
+    var t=el('span','rtext'),n=ofLang(l.id).length,own=l.endo!==l.name,sm=el('small');
+    if(own)sm.appendChild(el('bdi',null,l.endo));
+    if(n)sm.appendChild(document.createTextNode((own?' · ':'')+words(n)));
+    t.appendChild(el('b',null,l.name));t.appendChild(sm);
+    r.appendChild(t);
+    if(on)r.appendChild(act('minus','Убрать из меню: '+l.name,MINUS,function(){vanish(r,0,function(){removeLang(l.id);renderSheet()})}));
+    else{
+      r.appendChild(act('ghost','Удалить из списка: '+l.name,TRASH,function(){vanish(r,0,function(){dropLang(l.id);renderSheet()})}));
+      r.appendChild(act('plus','Добавить в меню: '+l.name,PLUS,function(){vanish(r,0,function(){addLang(l);renderSheet()})}));
+    }
+    return r;
+  }
+  function renderSheet(){
+    var raw=$('langSearch').value.trim().slice(0,30),q=raw.toLowerCase();
+    function match(l){return !q||l.name.toLowerCase().indexOf(q)>=0||l.endo.toLowerCase().indexOf(q)>=0}
+    var on=langs.filter(match);
+    var off=removed.concat(PRESETS).filter(function(l){return !active(l.id)&&hidden.indexOf(l.id)<0&&match(l)});
+    var box=$('sheetList');box.textContent='';
+    if(on.length){box.appendChild(el('div','sec','В меню'));on.forEach(function(l){box.appendChild(sheetRow(l,true))})}
+    if(off.length){box.appendChild(el('div','sec','Можно добавить'));off.forEach(function(l){box.appendChild(sheetRow(l,false))})}
+    var exact=on.concat(off).some(function(l){return l.name.toLowerCase()===q||l.endo.toLowerCase()===q});
+    if(raw&&!exact){
+      var b=el('button','new');b.type='button';b.innerHTML=PLUS;
+      b.appendChild(el('span',null,'Добавить язык «'+raw+'»'));
+      b.addEventListener('click',function(){addByName(raw);$('langSearch').value='';renderSheet()});
+      box.appendChild(b);
+    }else if(!on.length&&!off.length){
+      box.appendChild(el('p','none','Список пуст. Введите название языка, чтобы добавить его.'));
+    }
+  }
+  /* a sheet slides up from the bottom edge; a centred dialog grows out of the middle */
+  function showSheet(wrap){
+    var mid=wrap.classList.contains('center');
+    wrap.hidden=false;
+    anim(wrap,[{opacity:0},{opacity:1}],mid?260:280,{easing:'ease-out'});
+    anim(wrap.firstElementChild,[{transform:mid?'translateY(22px) scale(.92)':'translateY(64px)'},{transform:'none'}],mid?460:420,
+      mid?{easing:'cubic-bezier(.2,.9,.25,1.08)'}:null);
+  }
+  function hideSheet(wrap){
+    if(wrap.hidden||wrap._closing)return;
+    var mid=wrap.classList.contains('center');
+    if(document.activeElement&&wrap.contains(document.activeElement))document.activeElement.blur();
+    var a=anim(wrap.firstElementChild,[{transform:'none'},{transform:mid?'scale(.95)':'translateY(64px)'}],220,{easing:'ease-in',fill:'forwards'});
+    var b=anim(wrap,[{opacity:1},{opacity:0}],220,{easing:'ease-in',fill:'forwards'});
+    if(!a||!b){wrap.hidden=true;return}
+    wrap._closing=true;
+    after(b,220,function(){wrap.hidden=true;a.cancel();b.cancel();wrap._closing=false});
+  }
+  function openSheet(){$('langSearch').value='';renderSheet();showSheet($('sheetWrap'));stagger($('sheetList').children)}
+  function closeSheet(){hideSheet($('sheetWrap'))}
+
+  /* --- own words: a pasted list ("word - translation" per line) or one word at a time --- */
+  var addMode='list',delArmed=false;
+  function parseList(text){
+    var items=[],bad=0;
+    String(text).split(/\r?\n/).forEach(function(line){
+      line=line.trim();if(!line)return;
+      var p=line.split(/\s+-\s+|\s*[–—=\t]\s*/).map(function(s){return s.trim()});
+      if(p.length<2||!p[0]||!p[1]){bad++;return}
+      items.push({word:p[0].slice(0,60),ru:p[1].slice(0,80),read:(p[2]||'').slice(0,60)});
+    });
+    return {items:items,bad:bad};
+  }
+  function saveMine(items){
+    var folder=inner(lang,$('addTopic').value.trim().slice(0,40)||'Мои слова'),stamp=Date.now().toString(36);
+    /* a new folder appears on the page that is open; a folder deleted earlier comes back; an existing one keeps its page */
+    var isNew=!cards.some(function(c){return c.lang===lang&&tname(c)===folder});
+    if(Array.isArray(hfold[lang]))hfold[lang]=hfold[lang].filter(function(n){return n!==folder});
+    if(isNew){fpage[lang]=obj(fpage[lang]);fpage[lang][folder]=curPage()}
+    else{pageId=pageOf(lang,folder);lastPage[lang]=pageId}
+    savePages();
+    items.forEach(function(it,i){
+      mine.push({id:'u'+stamp+'-'+i,lang:lang,topic:folder,ru:it.ru,word:it.word,read:it.read,mine:true});
+    });
+    store.set('mine',mine);
+    merge();rebuild(false);
+  }
+  /* --- sharing: folders travel as one line of text (a "code") that a friend pastes into "По коду" --- */
+  function b64e(bytes){
+    var s='';for(var i=0;i<bytes.length;i++)s+=String.fromCharCode(bytes[i]);
+    return btoa(s).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+  }
+  function b64d(str){
+    str=str.replace(/-/g,'+').replace(/_/g,'/');while(str.length%4)str+='=';
+    var s=atob(str),u=new Uint8Array(s.length);for(var i=0;i<s.length;i++)u[i]=s.charCodeAt(i);
+    return u;
+  }
+  async function squeeze(bytes,stream){
+    return new Uint8Array(await new Response(new Blob([bytes]).stream().pipeThrough(stream)).arrayBuffer());
+  }
+  /* LNG1Z. = compressed (shorter, needs a recent system), LNG1. = plain */
+  async function encodeShare(p){
+    var raw=new TextEncoder().encode(JSON.stringify(p));
+    if(window.CompressionStream&&window.DecompressionStream){
+      try{var z=await squeeze(raw,new CompressionStream('deflate-raw'));if(z.length<raw.length)return 'LNG1Z.'+b64e(z)}catch(e){}
+    }
+    return 'LNG1.'+b64e(raw);
+  }
+  async function decodeShare(text){
+    var m=/LNG1(Z?)\.([A-Za-z0-9_-]+)/.exec(String(text).replace(/\s+/g,''));
+    if(!m)throw new Error('format');
+    var bytes=b64d(m[2]);
+    if(m[1]){
+      if(!window.DecompressionStream)throw new Error('old');
+      bytes=await squeeze(bytes,new DecompressionStream('deflate-raw'));
+    }
+    return cleanShare(JSON.parse(new TextDecoder().decode(bytes)));
+  }
+  /* a code comes from someone else: keep only well-formed words and cap every length and count */
+  function cleanShare(p){
+    if(!p||p.v!==1||typeof p.l!=='string'||!IDRE.test(p.l)||!Array.isArray(p.f))throw new Error('format');
+    var total=0,f=[];
+    p.f.slice(0,60).forEach(function(x){
+      if(!Array.isArray(x)||!Array.isArray(x[1]))return;
+      var name=String(x[0]||'').trim().slice(0,40)||'Импорт',ws=[];
+      x[1].forEach(function(w){
+        if(!Array.isArray(w)||total>=3000)return;
+        var a=String(w[0]||'').trim().slice(0,60),b=String(w[1]||'').trim().slice(0,80);
+        if(!a||!b)return;
+        ws.push([a,b,String(w[2]||'').trim().slice(0,60)]);total++;
+      });
+      if(ws.length)f.push([name,ws]);
+    });
+    if(!f.length)throw new Error('format');
+    var name=String(p.n||p.l).trim().slice(0,40)||p.l;
+    return {l:p.l,n:name,e:String(p.e||name).trim().slice(0,40)||name,a:!!p.a,f:f,total:total};
+  }
+  /* add the shared folders as this person's own words; words they already have are skipped */
+  function applyImport(p){
+    var id=p.l,here=id===lang&&view!=='home'?curPage():null,added=0,stamp=Date.now().toString(36);
+    if(!active(id)){
+      var known_=preset(id)||removed.filter(function(l){return l.id===id})[0];
+      addLang(known_||{id:id,name:p.n,endo:p.e,arab:p.a});
+    }
+    var target=here||getPages(id)[0].id;
+    p.f.forEach(function(f,fi){
+      var name=inner(id,f[0]),have=cards.filter(function(c){return c.lang===id&&tname(c)===name});
+      if(Array.isArray(hfold[id]))hfold[id]=hfold[id].filter(function(n){return n!==name});
+      if(!have.length){fpage[id]=obj(fpage[id]);fpage[id][name]=target}
+      f[1].forEach(function(w,wi){
+        if(have.some(function(c){return c.word===w[0]&&c.ru===w[1]}))return;
+        mine.push({id:'u'+stamp+'-'+fi+'-'+wi,lang:id,topic:name,ru:w[1],word:w[0],read:w[2],mine:true});added++;
+      });
+    });
+    savePages();store.set('mine',mine);merge();
+    lang=id;lastLang=id;store.set('lang',id);topic='';pageId=target;lastPage[id]=target;
+    rebuild(false);
+    return added;
+  }
+  function openShare(){
+    var cur=curPage(),groups={},l=L(lang);
+    ofLang(lang).forEach(function(c){var t=tname(c);if(pageOf(lang,t)===cur)(groups[t]=groups[t]||[]).push(c)});
+    var names=sortFolders(lang,Object.keys(groups));
+    var body=openDlg('Поделиться');
+    if(!names.length){body.appendChild(el('p','help','На этой странице нет папок, делиться пока нечем.'));return}
+    body.appendChild(el('p','help','Отметьте папки и отправьте код другу. Он откроет у себя «Добавить слова» → «По коду», вставит код и получит эти слова.'));
+    var sel={},list=el('div','picks');body.appendChild(list);
+    names.forEach(function(n){
+      sel[n]=true;
+      var b=el('button','pick'),t=el('span'),mark=el('span','tick');b.type='button';
+      t.appendChild(document.createTextNode(shown(lang,n)));t.appendChild(el('small',null,' · '+words(groups[n].length)));
+      mark.innerHTML=CHECK;b.appendChild(t);b.appendChild(mark);b.setAttribute('aria-pressed','true');
+      b.addEventListener('click',function(){sel[n]=!sel[n];b.setAttribute('aria-pressed',sel[n]?'true':'false');make()});
+      list.appendChild(b);
+    });
+    var f=el('div','field'),lab=el('label',null,'Код'),ta=document.createElement('textarea');
+    ta.id='shareCode';ta.className='code';ta.readOnly=true;lab.htmlFor='shareCode';
+    f.appendChild(lab);f.appendChild(ta);body.appendChild(f);
+    var info=el('p','help');body.appendChild(info);
+    var copy=el('button','cta','Скопировать код');copy.type='button';copy.disabled=true;body.appendChild(copy);
+    var code='',job=0;
+    async function make(){
+      var my=++job,picked=names.filter(function(n){return sel[n]}),n=0;
+      code='';copy.disabled=true;copy.textContent='Скопировать код';
+      if(!picked.length){ta.value='';info.textContent='Отметьте хотя бы одну папку.';return}
+      var p={v:1,l:l.id,n:l.name,e:l.endo,a:l.arab?1:0,f:picked.map(function(name){
+        return [shown(lang,name),groups[name].map(function(c){n++;return c.read?[c.word,c.ru,c.read]:[c.word,c.ru]})];
+      })};
+      var s=await encodeShare(p);
+      if(my!==job)return;
+      code=s;ta.value=s;copy.disabled=false;
+      info.textContent=l.name+' · '+words(n)+' · длина кода: '+s.length;
+    }
+    function manual(){
+      ta.focus();ta.select();
+      try{if(document.execCommand('copy')){copy.textContent='Скопировано';return}}catch(e){}
+      info.textContent='Не получилось скопировать автоматически. Выделите код в поле и скопируйте вручную.';
+    }
+    copy.addEventListener('click',function(){
+      if(!code)return;
+      try{navigator.clipboard.writeText(code).then(function(){copy.textContent='Скопировано'},manual)}catch(e){manual()}
+    });
+    if(navigator.share){
+      var send=el('button','textbtn','Отправить через…');send.type='button';body.appendChild(send);
+      send.addEventListener('click',function(){if(code)navigator.share({text:code}).catch(function(){})});
+    }
+    make();
+  }
+  /* the pasted code is checked as it is typed; importData holds the last valid one */
+  var importData=null,importErr='',importJob=0;
+  async function checkImport(){
+    var my=++importJob,v=$('importCode').value.trim();
+    importData=null;importErr='';
+    if(v){
+      try{var p=await decodeShare(v);if(my!==importJob)return;importData=p}
+      catch(e){
+        if(my!==importJob)return;
+        importErr=e&&e.message==='old'?'Этот код сжат, а телефон не умеет его распаковать. Обновите систему или попросите друга прислать код с другого устройства.':
+          'Это не похоже на код Linguaaa. Скопируйте его целиком: от LNG1 до последнего знака.';
+      }
+    }
+    renderAdd();
+  }
+
+  function renderAdd(){
+    var one=addMode==='one',byCode=addMode==='code';
+    $('modeList').setAttribute('aria-pressed',addMode==='list'?'true':'false');
+    $('modeOne').setAttribute('aria-pressed',one?'true':'false');
+    $('modeCode').setAttribute('aria-pressed',byCode?'true':'false');
+    $('paneList').hidden=addMode!=='list';$('paneOne').hidden=!one;$('paneCode').hidden=!byCode;
+    $('folderField').hidden=byCode;
+    var help=$('addHelp'),btn=$('addSave');help.textContent='';
+    if(byCode){
+      btn.textContent='Импортировать';btn.disabled=!importData;
+      if(importData){
+        help.appendChild(el('b',null,importData.n+' · папок: '+importData.f.length+' · '+words(importData.total)));
+        help.appendChild(document.createTextNode('. Папки: '+importData.f.map(function(f){return f[0]}).join(', ')+'.'));
+      }else help.textContent=importErr||'Друг нажимает у себя «Поделиться папками», копирует код и присылает вам. Слова добавятся в папки с теми же названиями; то, что у вас уже есть, не продублируется.';
+      return;
+    }
+    if(one){
+      btn.textContent='Добавить слово';
+      btn.disabled=!$('addWord').value.trim()||!$('addRu').value.trim();
+      help.textContent='После добавления поля очистятся, и можно вводить следующее слово.';
+    }else{
+      var r=parseList($('addText').value),n=r.items.length;
+      btn.textContent=n?'Добавить '+words(n):'Добавить';btn.disabled=!n;
+      if(n||r.bad){
+        help.appendChild(el('b',null,'Распознано: '+n));
+        if(r.bad)help.appendChild(document.createTextNode('. Не разобрал строк: '+r.bad+' — в них нет дефиса между словом и переводом.'));
+      }else help.textContent='Каждое слово с новой строки: слово - перевод. Третьей частью можно дописать чтение русскими буквами.';
+    }
+  }
+  function openAdd(){
+    var l=L(lang),dl=$('topicList'),seen={};
+    $('addTextLabel').textContent='Слова · '+l.name;
+    $('addWordLabel').textContent='Слово · '+l.name;
+    dl.textContent='';
+    var cur=curPage(),here=[],ps=getPages(lang);
+    ofLang(lang).forEach(function(c){
+      var t=tname(c);
+      if(seen[t])return;
+      seen[t]=1;var o=document.createElement('option');o.value=shown(lang,t);dl.appendChild(o);
+      if(c.mine&&pageOf(lang,t)===cur)here.push(shown(lang,t));
+    });
+    /* suggest a folder on the open page: the one being trained, else one with own words, else a fresh name */
+    var fresh=ps[0].id===cur?'Мои слова':ps.filter(function(p){return p.id===cur})[0].name;
+    $('addTopic').value=(view==='train'||view==='folder')&&topic?shown(lang,topic):(here[0]||fresh);
+    $('addText').value='';$('addWord').value='';$('addRu').value='';$('addRead').value='';
+    $('importCode').value='';importData=null;importErr='';importJob++;
+    $('addWord').classList.toggle('arab',!!l.arab);$('addText').classList.toggle('arab',!!l.arab);
+    renderAdd();showSheet($('addWrap'));
+  }
+  function closeAdd(){hideSheet($('addWrap'))}
+  function submitAdd(){
+    if(addMode==='code'){
+      if(!importData)return;
+      var was=view,added=applyImport(importData);
+      $('importCode').value='';importData=null;importErr='';
+      if(!added){
+        render();renderAdd();
+        $('addHelp').textContent='';$('addHelp').appendChild(el('b',null,'Все слова из этого кода у вас уже есть.'));
+        return;
+      }
+      closeAdd();
+      if(was==='topics'){entering=true;render();entering=false}else go('topics');
+      return;
+    }
+    if(addMode==='one'){
+      var w=$('addWord').value.trim(),r=$('addRu').value.trim();
+      if(!w||!r)return;
+      saveMine([{word:w.slice(0,60),ru:r.slice(0,80),read:$('addRead').value.trim().slice(0,60)}]);
+      $('addWord').value='';$('addRu').value='';$('addRead').value='';
+      render();renderAdd();
+      $('addHelp').textContent='';$('addHelp').appendChild(el('b',null,'Добавлено: '+w));
+      $('addWord').focus();
+    }else{
+      var items=parseList($('addText').value).items;
+      if(!items.length)return;
+      saveMine(items);closeAdd();
+      entering=true;render();entering=false;
+    }
+  }
+  /* an own word is removed for good; a built-in one is only hidden and can be brought back from its folder */
+  function deleteWord(id){
+    var c=byId(id);if(!c)return;
+    if(c.mine){mine=mine.filter(function(x){return x.id!==id});store.set('mine',mine)}
+    else{hword[id]=1;store.set('hword',hword)}
+    if(known[id]){mark(id,false);persist()}
+    merge();queue=queue.filter(function(x){return x!==id});
+    history=history.filter(function(h){return h.id!==id});
+    if(shownId===id)shownId=null;
+    delArmed=false;render();
+  }
+  function deleteCurrent(){deleteWord(queue[0])}
+
+  /* --- screens --- */
+  var W=96,homeKey=null;
+  function langRow(l){
+    var wrap=el('div','swipe');
+    var del=el('button','del');del.type='button';del.innerHTML=TRASH+'<span>Убрать</span>';
+    del.setAttribute('aria-label','Убрать язык: '+l.name);
+    var b=el('button','lang-btn panel');b.type='button';
+    var sig=el('span','sig'+(l.arab?' arab':''),glyph(l));sig.setAttribute('aria-hidden','true');b.appendChild(sig);
+    b.appendChild(badge(l));
+    var text=langText(l,''),goTo=el('span','go');
+    b.appendChild(text);b.appendChild(goTo);
+    /* refresh the word count and the "last opened" mark without rebuilding the row */
+    wrap._upd=function(){
+      var sub=l.endo===l.name?'':l.name,extra=loaded&&!failed?words(ofLang(l.id).length):'';
+      text.lastChild.textContent=sub+(sub&&extra?' · ':'')+extra;
+      goTo.className='go'+(l.id===lastLang?' last':'');goTo.innerHTML=l.id===lastLang?CHECK:CHEV;
+    };
+    wrap._upd();
+    wrap.appendChild(del);wrap.appendChild(b);
+
+    swipeRow(wrap,b,del,W,function(){
+      lang=l.id;lastLang=l.id;store.set('lang',l.id);topic='';pageId=lastPage[l.id]||null;go('topics');
+    });
+    del.addEventListener('click',function(){vanish(wrap,12,function(){removeLang(l.id)})});
+    return wrap;
+  }
+  /* a row that slides left to uncover its action buttons, like a list row on an iPhone */
+  function swipeRow(wrap,b,acts,width,onTap){
+    var sx=0,sy=0,base=0,cur=0,drag=false,moved=false,pid=null;
+    function setX(x,smooth){
+      cur=x;b.style.transition=smooth&&!reduce?'transform .34s cubic-bezier(.2,.9,.25,1.1)':'none';
+      b.style.transform=x?'translateX('+x+'px)':'';
+      wrap.classList.toggle('open',x<0);acts.style.opacity=Math.min(1,-x/60);
+    }
+    function close(){setX(0,true);if(openRow&&openRow.wrap===wrap)openRow=null}
+    function open(){if(openRow&&openRow.wrap!==wrap)openRow.close();setX(-width,true);openRow={wrap:wrap,close:close}}
+    b.addEventListener('pointerdown',function(e){if(e.button)return;pid=e.pointerId;sx=e.clientX;sy=e.clientY;base=cur;drag=false;moved=false});
+    b.addEventListener('pointermove',function(e){
+      if(pid!==e.pointerId)return;
+      var mx=e.clientX-sx,my=e.clientY-sy;
+      if(!drag){
+        if(Math.abs(mx)<8||Math.abs(mx)<Math.abs(my))return;
+        drag=true;moved=true;try{b.setPointerCapture(pid)}catch(_){}
+        if(openRow&&openRow.wrap!==wrap)openRow.close();
+      }
+      setX(Math.max(-width-28,Math.min(0,base+mx)),false);
+    });
+    function end(e){
+      if(pid!==e.pointerId)return;pid=null;
+      if(!drag)return;drag=false;
+      if(cur<-width/2)open();else close();
+    }
+    b.addEventListener('pointerup',end);b.addEventListener('pointercancel',end);
+    b.addEventListener('click',function(e){
+      if(moved){moved=false;e.preventDefault();return}
+      if(cur<0){close();return}
+      if(openRow){openRow.close();return}
+      onTap();
+    });
+    b.addEventListener('keydown',function(e){
+      if(e.key!=='Delete'&&e.key!=='Backspace')return;
+      e.preventDefault();open();
+      var first=acts.tagName==='BUTTON'?acts:acts.querySelector('button');if(first)first.focus();
+    });
+  }
+  function renderHome(){
+    $('homeSub').textContent=failed?'Карточки не загрузились. Войдите в аккаунт Claude и обновите страницу.':langs.length?'Выберите язык':'Языков нет. Добавьте первый кнопкой «+».';
+    var shown=cards.filter(function(c){return active(c.lang)&&!gone(c)});
+    var chip=$('homeChip'),ok=loaded&&!failed&&shown.length>0;
+    chip.hidden=!ok;
+    if(ok)chip.textContent='Выучено '+shown.filter(function(c){return known[c.id]}).length+' из '+shown.length;
+    var list=$('langList'),key=langs.map(function(l){return l.id+':'+l.name}).join('|');
+    if(key===homeKey&&list.children.length===langs.length){
+      Array.prototype.forEach.call(list.children,function(w){w._upd()});
+    }else{
+      list.textContent='';openRow=null;homeKey=key;
+      langs.forEach(function(l){list.appendChild(langRow(l))});
+    }
+    if(entering)stagger(list.children);
+    $('swipeTip').hidden=!langs.length;
+  }
+
+  function ring(done,total){
+    var r=el('span','ring'),C=2*Math.PI*19,p=total?done/total:0;
+    r.innerHTML='<svg viewBox="0 0 46 46" aria-hidden="true"><circle class="tr" cx="23" cy="23" r="19"/><circle class="pr" cx="23" cy="23" r="19"'+(p?'':' stroke-opacity="0"')+'/></svg>';
+    r.appendChild(el('span',null,Math.round(p*100)+'%'));
+    /* the arc draws itself when the screen opens */
+    var arc=r.querySelector('.pr'),full=(C*p).toFixed(1)+' '+C.toFixed(1);
+    if(entering&&!reduce){
+      arc.style.strokeDasharray='0 '+C.toFixed(1);
+      setTimeout(function(){arc.style.strokeDasharray=full},260);
+    }else arc.style.strokeDasharray=full;
+    return r;
+  }
+  function folder(name,list,isAll){
+    var done=list.filter(function(c){return known[c.id]}).length;
+    var b=el('button','folder panel');b.type='button';
+    var ic=el('span','ficon');ic.innerHTML=FOLDER;b.appendChild(ic);
+    var body=el('span','fbody');
+    body.appendChild(el('span','fname',isAll?name:shown(lang,name)));
+    body.appendChild(el('span','fmeta',words(list.length)+' · выучено '+done));
+    b.appendChild(body);b.appendChild(ring(done,list.length));
+    function start(){topic=isAll?'':name;go('folder')}
+    if(isAll){b.addEventListener('click',start);return b}
+
+    /* a real folder slides left: move it to another page, or delete it */
+    var wrap=el('div','swipe'),acts=el('div','facts'),own=list.filter(function(c){return c.mine}).length,armed=false;
+    wrap.dataset.name=name;
+    var mv=el('button','fact move');mv.type='button';mv.innerHTML=MOVE+'<span>Перенести</span>';
+    var rm=el('button','fact rm');rm.type='button';rm.innerHTML=TRASH+'<span>Удалить</span>';
+    mv.setAttribute('aria-label','Перенести папку на другую страницу: '+shown(lang,name));
+    rm.setAttribute('aria-label','Удалить папку: '+shown(lang,name));
+    acts.appendChild(mv);acts.appendChild(rm);
+    wrap.appendChild(acts);wrap.appendChild(b);
+    swipeRow(wrap,b,acts,180,start);
+    mv.addEventListener('click',function(){openMove(name)});
+    rm.addEventListener('click',function(){
+      /* own words cannot be brought back, so a folder that holds them asks twice */
+      if(own&&!armed){armed=true;rm.lastChild.textContent='Точно?';return}
+      vanish(wrap,10,function(){deleteFolder(name)});
+    });
+    return wrap;
+  }
+  function deleteFolder(name){
+    var builtIn=base.some(function(c){return c.lang===lang&&tname(c)===name});
+    mine.filter(function(c){return c.lang===lang&&tname(c)===name}).forEach(function(c){if(known[c.id])mark(c.id,false)});
+    mine=mine.filter(function(c){return !(c.lang===lang&&tname(c)===name)});
+    store.set('mine',mine);persist();
+    if(builtIn){
+      if(!Array.isArray(hfold[lang]))hfold[lang]=[];
+      if(hfold[lang].indexOf(name)<0)hfold[lang].push(name);
+    }
+    if(fpage[lang])delete fpage[lang][name];
+    savePages();merge();openRow=null;render();
+  }
+  function showPage(id){pageId=id;lastPage[lang]=id;openRow=null;entering=true;render();entering=false}
+  function renderPages(){
+    var nav=$('pages'),cur=curPage();nav.textContent='';
+    getPages(lang).forEach(function(p){
+      var on=p.id===cur,b=el('button','tab glass');b.type='button';
+      b.setAttribute('aria-pressed',on?'true':'false');
+      b.appendChild(el('span',null,p.name));
+      if(on){b.insertAdjacentHTML('beforeend',PENCIL);b.setAttribute('aria-label',p.name+'. Нажмите, чтобы переименовать')}
+      b.addEventListener('click',function(){if(on)openRename(p.id);else showPage(p.id)});
+      nav.appendChild(b);
+    });
+    var add=el('button','tab plus glass');add.type='button';add.innerHTML=PLUS;
+    add.setAttribute('aria-label','Добавить страницу');
+    add.addEventListener('click',function(){
+      var ps=ownPages(lang),n=ps.length+1;
+      while(ps.some(function(p){return p.name==='Тема '+n}))n++;
+      var id='p'+Date.now().toString(36);
+      ps.push({id:id,name:'Тема '+n});savePages();showPage(id);
+      nav.scrollLeft=nav.scrollWidth;
+    });
+    nav.appendChild(add);
+  }
+  function renderTopics(){
+    var l=L(lang),all=ofLang(lang),groups={},cur=curPage(),many=getPages(lang).length>1;
+    var hero=$('hero');hero.textContent='';
+    hero.appendChild(badge(l));hero.appendChild(langText(l,loaded&&!failed?words(all.length):''));
+    renderPages();
+    all.forEach(function(c){var t=tname(c);(groups[t]=groups[t]||[]).push(c)});
+    var names=sortFolders(lang,Object.keys(groups).filter(function(t){return pageOf(lang,t)===cur}));
+    var onPage=all.filter(function(c){return pageOf(lang,tname(c))===cur});
+    var box=$('folders');box.textContent='';
+    var empty=!names.length,lost=Array.isArray(hfold[lang])?hfold[lang].length:0,back=$('restoreFolders');
+    if(empty)editing=false;
+    box.hidden=empty;$('topicsNote').hidden=!empty;$('fbar').hidden=empty;
+    var eb=$('editFolders');eb.textContent=editing?'Готово':'Изменить';eb.setAttribute('aria-pressed',editing?'true':'false');
+    $('editTip').hidden=!editing;
+    back.hidden=!lost;back.textContent='Вернуть удалённые папки: '+lost;
+    if(empty){
+      $('tnTitle').textContent=!loaded?'Загружаю карточки':failed?'Карточки не загрузились':many?'На этой странице пусто':'Папок пока нет';
+      $('tnText').textContent=!loaded?'Одну секунду.':failed?'Откройте страницу, войдя в свой аккаунт Claude, и обновите её.':
+        many?'Добавьте слова кнопкой ниже или перенесите сюда папку с другой страницы: смахните папку влево и нажмите «Перенести».':'Добавьте первые слова кнопкой ниже, и здесь появится папка.';
+      return;
+    }
+    if(editing){
+      names.forEach(function(t,i){box.appendChild(editRow(t,groups[t],i,names.length))});
+    }else{
+      if(names.length>1)box.appendChild(folder('Все слова',onPage,true));
+      names.forEach(function(t){box.appendChild(folder(t,groups[t],false))});
+    }
+    if(entering)stagger(box.children);
+  }
+
+  /* --- edit mode for folders: rename by tapping, reorder with the arrows --- */
+  var editing=false;
+  var GRIP='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M5 8h14M5 12h14M5 16h14"/></svg>';
+  /* drag a folder by its handle: it follows the finger, the others make room, it settles into the gap */
+  function dragFolder(row,grip,e){
+    var box=$('folders'),rows=[].slice.call(box.querySelectorAll('.folder.editing')),from=rows.indexOf(row);
+    if(from<0||rows.length<2)return;
+    var rects=rows.map(function(r){return r.getBoundingClientRect()});
+    var gap=rects[1].top-rects[0].bottom,step=rects[from].height+gap,y0=e.clientY,to=from,pid=e.pointerId;
+    try{grip.setPointerCapture(pid)}catch(_){}
+    row.classList.add('dragging');row.style.transition='none';
+    rows.forEach(function(r){if(r!==row)r.style.transition=reduce?'none':'transform .22s cubic-bezier(.2,.8,.2,1)'});
+    function move(ev){
+      if(ev.pointerId!==pid)return;
+      var lo=rects[0].top-rects[from].top-12,hi=rects[rows.length-1].bottom-rects[from].bottom+12;
+      var dy=Math.max(lo,Math.min(hi,ev.clientY-y0));
+      row.style.transform='translateY('+dy+'px) scale(1.02)';
+      var center=rects[from].top+rects[from].height/2+dy;to=from;
+      rects.forEach(function(rc,i){
+        var mid=rc.top+rc.height/2;
+        if(i<from&&center<mid)to=Math.min(to,i);
+        if(i>from&&center>mid)to=Math.max(to,i);
+      });
+      rows.forEach(function(r,i){
+        if(r===row)return;
+        var s=from<to&&i>from&&i<=to?-step:from>to&&i<from&&i>=to?step:0;
+        r.style.transform=s?'translateY('+s+'px)':'';
+      });
+    }
+    function end(ev){
+      if(ev.pointerId!==pid)return;
+      grip.removeEventListener('pointermove',move);grip.removeEventListener('pointerup',end);grip.removeEventListener('pointercancel',end);
+      var target=to>from?rects[to].bottom-rects[from].bottom:rects[to].top-rects[from].top;
+      row.style.transition=reduce?'none':'transform .2s cubic-bezier(.2,.8,.2,1)';
+      row.style.transform='translateY('+target+'px)';
+      setTimeout(function(){
+        if(to!==from){
+          var names=rows.map(function(r){return r.dataset.name}),n=names.splice(from,1)[0];
+          names.splice(to,0,n);
+          var rest=(Array.isArray(forder[lang])?forder[lang]:[]).filter(function(x){return names.indexOf(x)<0});
+          forder[lang]=names.concat(rest);savePages();
+        }
+        render();
+      },reduce?0:200);
+    }
+    grip.addEventListener('pointermove',move);grip.addEventListener('pointerup',end);grip.addEventListener('pointercancel',end);
+  }
+  function editRow(name,list,i,n){
+    var b=el('div','folder panel editing');b.dataset.name=name;
+    b.setAttribute('role','button');b.tabIndex=0;b.setAttribute('aria-label','Переименовать папку: '+shown(lang,name));
+    var ic=el('span','ficon');ic.innerHTML=FOLDER;b.appendChild(ic);
+    var body=el('span','fbody'),nm=el('span','fname',shown(lang,name));
+    nm.insertAdjacentHTML('beforeend','<span class="pen">'+PENCIL+'</span>');
+    body.appendChild(nm);body.appendChild(el('span','fmeta',words(list.length)));b.appendChild(body);
+    /* the handle on the side: press it and drag the folder to a new place */
+    var grip=el('button','grip');grip.type='button';grip.innerHTML=GRIP;
+    grip.setAttribute('aria-label','Перетащить папку «'+shown(lang,name)+'». С клавиатуры: стрелки вверх и вниз');
+    b.appendChild(grip);
+    grip.addEventListener('pointerdown',function(e){if(e.button)return;e.preventDefault();dragFolder(b,grip,e)});
+    grip.addEventListener('click',function(e){e.stopPropagation()});
+    grip.addEventListener('keydown',function(e){
+      if(e.key==='ArrowUp'||e.key==='ArrowDown'){e.preventDefault();moveFolder(name,e.key==='ArrowUp'?-1:1)}
+    });
+    b.addEventListener('click',function(e){if(e.target.closest('.grip'))return;openFolderRename(name)});
+    b.addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();openFolderRename(name)}});
+    return b;
+  }
+  function moveFolder(name,dir){
+    var box=$('folders'),before={},cur=curPage(),seen={};
+    Array.prototype.forEach.call(box.querySelectorAll('[data-name]'),function(n){before[n.dataset.name]=n.getBoundingClientRect().top});
+    ofLang(lang).forEach(function(c){var t=tname(c);if(pageOf(lang,t)===cur)seen[t]=1});
+    var names=sortFolders(lang,Object.keys(seen)),i=names.indexOf(name),j=i+dir;
+    if(i<0||j<0||j>=names.length)return;
+    names[i]=names[j];names[j]=name;
+    var rest=(Array.isArray(forder[lang])?forder[lang]:[]).filter(function(x){return names.indexOf(x)<0});
+    forder[lang]=names.concat(rest);savePages();render();
+    /* the two rows slide into their new places */
+    Array.prototype.forEach.call(box.querySelectorAll('[data-name]'),function(n){
+      var b0=before[n.dataset.name];if(b0==null)return;
+      var d=b0-n.getBoundingClientRect().top;
+      if(d)anim(n,[{transform:'translateY('+d+'px)'},{transform:'none'}],320);
+    });
+    var moved=box.querySelector('[data-name="'+(window.CSS&&CSS.escape?CSS.escape(name):name)+'"] .grip');
+    if(moved)moved.focus();
+  }
+  function openFolderRename(name){
+    var body=openDlg('Папка'),f=el('div','field'),lab=el('label',null,'Название'),inp=document.createElement('input');
+    inp.type='text';inp.id='folderName';inp.maxLength=40;inp.autocomplete='off';inp.value=shown(lang,name);lab.htmlFor='folderName';
+    f.appendChild(lab);f.appendChild(inp);body.appendChild(f);
+    var info=el('p','help');body.appendChild(info);
+    var ok=el('button','cta','Сохранить');ok.type='button';body.appendChild(ok);
+    function save(){
+      var v=inp.value.trim().slice(0,40);
+      if(!v){inp.focus();return}
+      var taken=cards.some(function(c){var t=tname(c);return c.lang===lang&&t!==name&&shown(lang,t).toLowerCase()===v.toLowerCase()});
+      if(taken){info.textContent='Папка с таким названием уже есть. Выберите другое.';inp.focus();return}
+      falias[lang]=obj(falias[lang]);
+      if(v===name)delete falias[lang][name];else falias[lang][name]=v;
+      savePages();closeDlg();render();
+    }
+    ok.addEventListener('click',save);
+    inp.addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();save()}});
+    if(obj(falias[lang])[name]){
+      var back=el('button','textbtn','Вернуть исходное название «'+name+'»');back.type='button';body.appendChild(back);
+      back.addEventListener('click',function(){delete falias[lang][name];savePages();closeDlg();render()});
+    }
+  }
+
+  /* --- small dialog: rename or delete a page, move a folder --- */
+  function openDlg(title){
+    $('dlgTitle').textContent=title;$('dlgBody').textContent='';
+    showSheet($('dlgWrap'));return $('dlgBody');
+  }
+  function closeDlg(){hideSheet($('dlgWrap'))}
+  function openRename(id){
+    var ps=getPages(lang),p=ps.filter(function(x){return x.id===id})[0];
+    if(!p)return;
+    var body=openDlg('Страница'),f=el('div','field'),lab=el('label',null,'Название'),inp=document.createElement('input');
+    inp.type='text';inp.id='pageName';inp.maxLength=30;inp.autocomplete='off';inp.value=p.name;lab.htmlFor='pageName';
+    f.appendChild(lab);f.appendChild(inp);body.appendChild(f);
+    var ok=el('button','cta','Сохранить');ok.type='button';body.appendChild(ok);
+    function save(){
+      var name=inp.value.trim().slice(0,30);
+      if(!name){inp.focus();return}
+      ownPages(lang).forEach(function(x){if(x.id===id)x.name=name});
+      savePages();closeDlg();render();
+    }
+    ok.addEventListener('click',save);
+    inp.addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();save()}});
+    if(ps.length>1){
+      var del=el('button','textbtn','Удалить страницу'),armed=false;del.type='button';
+      body.appendChild(del);
+      body.appendChild(el('p','help','Папки с удалённой страницы переедут на первую.'));
+      del.addEventListener('click',function(){
+        if(!armed){armed=true;del.textContent='Точно удалить страницу?';return}
+        pages[lang]=ownPages(lang).filter(function(x){return x.id!==id});
+        var m=obj(fpage[lang]);Object.keys(m).forEach(function(k){if(m[k]===id)delete m[k]});
+        pageId=null;delete lastPage[lang];savePages();closeDlg();
+        entering=true;render();entering=false;
+      });
+    }
+  }
+  function openMove(name){
+    var body=openDlg('Перенести «'+shown(lang,name)+'»'),here=pageOf(lang,name),ps=getPages(lang);
+    if(ps.length<2)body.appendChild(el('p','help','Пока есть только одна страница. Добавьте вторую кнопкой «+» рядом с названием страницы.'));
+    ps.forEach(function(p){
+      var b=el('button','pick');b.type='button';b.appendChild(el('span',null,p.name));
+      if(p.id===here){b.disabled=true;b.insertAdjacentHTML('beforeend',CHECK)}
+      b.addEventListener('click',function(){
+        fpage[lang]=obj(fpage[lang]);fpage[lang][name]=p.id;
+        savePages();closeDlg();openRow=null;render();
+      });
+      body.appendChild(b);
+    });
+  }
+
+  function applySide(){
+    $('sideFront').hidden=isBack;$('sideBack').hidden=!isBack;
+    $('card').classList.toggle('is-back',isBack);
+  }
+  function stopFlip(){
+    var card=$('card');
+    if(card.getAnimations)card.getAnimations().forEach(function(a){a.cancel()});
+    busy=false;
+  }
+  function pose(x,anim){
+    var card=$('card'),p=Math.min(1,Math.abs(x)/90);
+    card.style.transition=anim?'transform .42s cubic-bezier(.2,.9,.25,1.15)':'none';
+    card.style.transform=x?'translateX('+x+'px) rotate('+(x/20)+'deg)':'';
+    card.style.opacity='';
+    $('stYes').style.opacity=x>0?p:0;$('stNo').style.opacity=x<0?p:0;
+  }
+  function showNote(title,text,btn){
+    stopFlip();pose(0);
+    if($('note').hidden)anim($('note'),[{opacity:0,transform:'scale(.96)'},{opacity:1,transform:'none'}],420);
+    $('card').hidden=true;$('note').hidden=false;
+    $('noteTitle').textContent=title;$('noteText').textContent=text;
+    $('noteBtn').hidden=!btn;shownId=null;
+  }
+  function showCard(c){
+    var card=$('card');
+    $('note').hidden=true;card.hidden=false;
+    if(shownId===c.id)return;
+    shownId=c.id;stopFlip();pose(0);isBack=false;applySide();
+    var l=L(c.lang);
+    /* one side asks, the other answers; "rev" swaps which is which. The reading always travels with the foreign word. */
+    function put(node,text,foreign){
+      var n=String(text).length;node.textContent=text;
+      node.classList.toggle('long',n>13&&n<=26);node.classList.toggle('xlong',n>26);
+      node.classList.toggle('arab',foreign&&!!l.arab);node.dir=foreign&&l.arab?'rtl':'ltr';
+    }
+    function sub(node,foreign){node.textContent=foreign&&c.read?'[ '+c.read+' ]':'';node.hidden=!(foreign&&c.read)}
+    var tp=c.topic?shown(c.lang,c.topic):'';
+    $('fTopic').textContent=tp;$('bTopic').textContent=tp;
+    $('fLabel').textContent=rev?l.name:'По-русски';$('bLang').textContent=rev?'По-русски':l.name;
+    put($('ru'),rev?c.word:c.ru,rev);sub($('fRead'),rev);
+    put($('word'),rev?c.ru:c.word,!rev);sub($('read'),!rev);
+    var has=typeof c.svg==='string'&&c.svg.indexOf('<svg')===0;
+    $('pic').hidden=!has;$('sideBack').classList.toggle('haspic',has);
+    if(has)$('img').src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(c.svg);else $('img').removeAttribute('src');
+    anim(card,[{opacity:0,transform:fromLeft?'translateX(-48px) rotate(-3deg)':'translateY(18px) scale(.94)'},{opacity:1,transform:'none'}],380);
+  }
+  function renderTrain(){
+    var l=L(lang),t=$('trainTitle');t.textContent='';
+    t.appendChild(el('b',null,topic?shown(lang,topic):'Все слова'));t.appendChild(document.createTextNode(' · '+l.name));
+    var p=pool(),left=queue.length,done=p.length-left,ok=false;
+    if(!loaded)showNote('Загружаю карточки','Одну секунду.',false);
+    else if(!p.length)showNote('Здесь пока пусто','В этой папке нет карточек. Вернитесь назад и добавьте слова или выберите другую папку.',false);
+    else if(!left)showNote('Все слова выучены','В этой папке не осталось карточек. Можно пройти её ещё раз или выбрать другую.',true);
+    else{var c=byId(queue[0]);if(c){showCard(c);ok=true}}
+    /* any word can be deleted from here; the second tap confirms */
+    var dc=$('delCard');
+    if(!ok)delArmed=false;
+    dc.hidden=!ok;dc.classList.toggle('armed',delArmed);
+    dc.setAttribute('aria-label',delArmed?'Нажмите ещё раз, чтобы удалить слово':'Удалить это слово');
+    $('swapSides').classList.toggle('armed',rev);
+    $('swapSides').setAttribute('aria-label',rev?'Сейчас: слово → русский. Нажмите, чтобы поменять стороны':'Сейчас: русский → слово. Нажмите, чтобы поменять стороны');
+    $('prevWord').disabled=!history.length;
+    $('again').disabled=!ok;$('know').disabled=!ok;
+    $('left').textContent=p.length?'Выучено '+done+' из '+p.length:'';
+    $('barFill').style.width=p.length?(done/p.length*100)+'%':'0';
+    var r=$('reset');r.hidden=!done||!left;r.textContent=resetArmed?'Точно сбросить?':'Сбросить';
+  }
+
+  /* --- folder screen: every word with its translation and reading, delete buttons, which side goes first --- */
+  function wordRow(c,l){
+    /* the list follows the chosen direction: the side the card shows first is the big line */
+    var r=el('div','wrow'),t=el('div','wtext'),top=el('div'),second=el('div','wru');
+    function foreign(cls){
+      var f=el('span',cls+(l.arab?' arab':''),c.word);if(l.arab)f.dir='rtl';
+      return f;
+    }
+    if(rev){
+      top.appendChild(foreign('wword'));if(c.read)top.appendChild(el('span','wread','[ '+c.read+' ]'));
+      second.textContent=c.ru;
+    }else{
+      top.appendChild(el('span','wword',c.ru));
+      second.appendChild(foreign('wf'));if(c.read)second.appendChild(el('span','wread','[ '+c.read+' ]'));
+    }
+    t.appendChild(top);t.appendChild(second);r.appendChild(t);
+    if(known[c.id]){var k=el('span','wknown');k.innerHTML=CHECK;k.setAttribute('aria-label','Выучено');r.appendChild(k)}
+    var d=el('button','wdel'),armed=false;d.type='button';d.innerHTML=TRASH;
+    d.setAttribute('aria-label','Удалить слово: '+c.word);
+    d.addEventListener('click',function(){
+      /* an own word cannot be brought back, so it asks twice */
+      if(c.mine&&!armed){armed=true;d.classList.add('armed');d.setAttribute('aria-label','Нажмите ещё раз, чтобы удалить навсегда');return}
+      vanish(r,0,function(){deleteWord(c.id)});
+    });
+    r.appendChild(d);
+    return r;
+  }
+  function lostWords(){
+    var cur=curPage();
+    return base.filter(function(c){
+      return c.lang===lang&&hword[c.id]&&!lostFolder(c)&&(topic?tname(c)===topic:pageOf(lang,tname(c))===cur);
+    });
+  }
+  function renderFolder(){
+    var l=L(lang),p=pool().slice().sort(function(a,b){return tname(a).localeCompare(tname(b),'ru')});
+    var done=p.filter(function(c){return known[c.id]}).length,left=p.length-done;
+    $('folderLang').textContent=l.name;
+    $('folderTitle').textContent=topic?shown(lang,topic):'Все слова';
+    $('folderSub').textContent=words(p.length)+' · выучено '+done;
+    $('dirA').setAttribute('aria-pressed',rev?'false':'true');$('dirB').setAttribute('aria-pressed',rev?'true':'false');
+    $('startTrain').disabled=!p.length;
+    $('startLabel').textContent=!p.length?'Учить':left?'Учить · осталось '+left:'Пройти заново';
+    var box=$('wordList');box.textContent='';box.hidden=!p.length;$('folderNote').hidden=!!p.length;
+    p.forEach(function(c){box.appendChild(wordRow(c,l))});
+    if(entering)stagger(box.children);
+    var lost=lostWords().length,back=$('restoreWords');
+    back.hidden=!lost;back.textContent='Вернуть удалённые слова: '+lost;
+  }
+
+  function render(){
+    if(view!=='home'&&!active(lang))view='home';
+    $('vHome').hidden=view!=='home';$('vTopics').hidden=view!=='topics';$('vFolder').hidden=view!=='folder';$('vTrain').hidden=view!=='train';
+    var g1=$('g1'),g2=$('g2'),l=view==='home'?null:L(lang);
+    var t1=l?glyph(l):'a',t2=l?glyph(l):'я';
+    if(g1.textContent!==t1||g2.textContent!==t2){
+      g1.textContent=t1;g2.textContent=t2;
+      g1.classList.toggle('arab',!!(l&&l.arab));g2.classList.toggle('arab',!!(l&&l.arab));
+      anim(g1,[{opacity:0,transform:'translateY(-28px)'},{opacity:1,transform:'none'}],700);
+      anim(g2,[{opacity:0,transform:'translateY(36px)'},{opacity:1,transform:'none'}],900);
+    }
+    if(view==='home')renderHome();else if(view==='topics')renderTopics();else if(view==='folder')renderFolder();else renderTrain();
+    fits();
+  }
+  /* when the screen's content fits, the scrolling layer stops taking scroll gestures at all */
+  function fits(){
+    var sc=$('scroll');
+    sc.classList.remove('fits');
+    sc.classList.toggle('fits',sc.scrollHeight<=sc.clientHeight+1);
+  }
+  window.addEventListener('resize',fits);
+  if(document.fonts&&document.fonts.ready)document.fonts.ready.then(fits);
+
+  /* --- actions --- */
+  function flip(){
+    var card=$('card');
+    if(view!=='train'||card.hidden||busy)return;
+    function swap(){isBack=!isBack;applySide()}
+    if(reduce||!card.animate){swap();return}
+    busy=true;
+    var P='perspective(1200px) ';
+    var id=shownId;
+    after(card.animate([{transform:P+'rotateY(0deg) scale(1)'},{transform:P+'rotateY(90deg) scale(.96)'}],{duration:200,easing:'cubic-bezier(.5,0,.9,.5)'}),200,function(){
+      if(shownId!==id||!busy)return;
+      swap();
+      after(card.animate([{transform:P+'rotateY(-90deg) scale(.96)'},{transform:P+'rotateY(0deg) scale(1)'}],{duration:320,easing:EASE}),320,function(){if(shownId===id)busy=false});
+    });
+  }
+  /* every answer is remembered, so the last ones can be taken back one by one */
+  var history=[],fromLeft=false;
+  function answer(isKnown){
+    if(view!=='train'||!queue.length||$('card').hidden)return;
+    var id=queue.shift();
+    history.push({id:id,k:isKnown,was:!!known[id]});
+    if(history.length>200)history.shift();
+    if(isKnown){mark(id,true);persist()}else queue.push(id);
+    shownId=null;resetArmed=false;delArmed=false;render();
+  }
+  function undo(){
+    if(view!=='train'||busy)return;
+    var h;
+    while((h=history.pop())&&!byId(h.id)){}
+    if(!h)return;
+    if(h.k){if(!h.was){mark(h.id,false);persist()}}
+    else{var i=queue.lastIndexOf(h.id);if(i>=0)queue.splice(i,1)}
+    queue=queue.filter(function(x){return x!==h.id});
+    queue.unshift(h.id);
+    stopFlip();pose(0);shownId=null;resetArmed=false;delArmed=false;fromLeft=true;render();fromLeft=false;
+  }
+  /* throw the card off to the side, then count the answer: right = know, left = repeat */
+  function fling(dir){
+    var card=$('card');
+    if(view!=='train'||card.hidden||!queue.length)return;
+    stopFlip();
+    if(reduce){pose(0);answer(dir>0);return}
+    busy=true;
+    $('stYes').style.opacity=dir>0?1:0;$('stNo').style.opacity=dir<0?1:0;
+    card.style.transition='transform .3s cubic-bezier(.4,0,.8,.4),opacity .3s ease-in';
+    card.style.transform='translateX('+dir*window.innerWidth+'px) rotate('+dir*16+'deg)';
+    card.style.opacity='0';
+    setTimeout(function(){busy=false;pose(0);answer(dir>0)},300);
+  }
+  function resetPool(){
+    pool().forEach(function(c){if(known[c.id])mark(c.id,false)});
+    persist();resetArmed=false;history=[];rebuild(true);render();
+  }
+  (function(){
+    var card=$('card'),pid=null,sx=0,sy=0,dx=0,drag=false,moved=false;
+    card.addEventListener('pointerdown',function(e){if(e.button||busy)return;pid=e.pointerId;sx=e.clientX;sy=e.clientY;dx=0;drag=false;moved=false});
+    card.addEventListener('pointermove',function(e){
+      if(pid!==e.pointerId)return;
+      var mx=e.clientX-sx,my=e.clientY-sy;
+      if(!drag){
+        if(Math.abs(mx)<10||Math.abs(mx)<Math.abs(my))return;
+        drag=true;moved=true;try{card.setPointerCapture(pid)}catch(_){}
+      }
+      dx=mx;pose(mx,false);
+    });
+    function end(e){
+      if(pid!==e.pointerId)return;pid=null;
+      if(!drag)return;drag=false;
+      if(Math.abs(dx)>90)fling(dx>0?1:-1);else pose(0,true);
+    }
+    card.addEventListener('pointerup',end);card.addEventListener('pointercancel',end);
+    card.addEventListener('click',function(){if(moved){moved=false;return}flip()});
+    card.addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();e.stopPropagation();flip()}});
+  })();
+  $('toHome').addEventListener('click',function(){go('home')});
+  $('toTopics').addEventListener('click',function(){go('topics')});
+  $('toFolder').addEventListener('click',function(){go('folder')});
+  function setRev(v){
+    if(rev===!!v)return;
+    rev=!!v;store.set('rev',rev);shownId=null;render();
+    if(view==='folder')anim($('wordList'),[{opacity:.25,transform:'translateY(6px)'},{opacity:1,transform:'none'}],320);
+  }
+  $('dirA').addEventListener('click',function(){setRev(false)});
+  $('dirB').addEventListener('click',function(){setRev(true)});
+  $('swapSides').addEventListener('click',function(){setRev(!rev)});
+  $('startTrain').addEventListener('click',function(){
+    var p=pool();
+    if(!p.length)return;
+    /* everything already learned: start the folder over */
+    if(!p.some(function(c){return !known[c.id]})){p.forEach(function(c){mark(c.id,false)});persist()}
+    history=[];rebuild(true);shownId=null;go('train');
+  });
+  $('prevWord').addEventListener('click',undo);
+  $('addWords2').addEventListener('click',openAdd);
+  $('restoreWords').addEventListener('click',function(){
+    lostWords().forEach(function(c){delete hword[c.id]});
+    store.set('hword',hword);merge();entering=true;render();entering=false;
+  });
+  $('addLang').addEventListener('click',openSheet);
+  $('sheetClose').addEventListener('click',closeSheet);
+  $('sheetWrap').addEventListener('click',function(e){if(e.target===this)closeSheet()});
+  $('langSearch').addEventListener('input',renderSheet);
+  $('langSearch').addEventListener('keydown',function(e){
+    if(e.key!=='Enter')return;
+    e.preventDefault();
+    var raw=this.value.trim().slice(0,30);
+    if(raw){addByName(raw);this.value='';renderSheet()}
+  });
+  $('dlgClose').addEventListener('click',closeDlg);
+  $('dlgWrap').addEventListener('click',function(e){if(e.target===this)closeDlg()});
+  $('editFolders').addEventListener('click',function(){editing=!editing;openRow=null;entering=true;render();entering=false});
+  $('restoreFolders').addEventListener('click',function(){
+    hfold[lang]=[];savePages();entering=true;render();entering=false;
+  });
+  $('addWords').addEventListener('click',openAdd);
+  $('addClose').addEventListener('click',closeAdd);
+  $('addWrap').addEventListener('click',function(e){if(e.target===this)closeAdd()});
+  $('modeList').addEventListener('click',function(){addMode='list';renderAdd()});
+  $('modeOne').addEventListener('click',function(){addMode='one';renderAdd();$('addWord').focus()});
+  $('modeCode').addEventListener('click',function(){addMode='code';renderAdd()});
+  $('importCode').addEventListener('input',checkImport);
+  $('shareBtn').addEventListener('click',openShare);
+  /* the document itself must stay put; if anything nudges it while nobody is typing, put it back */
+  window.addEventListener('scroll',function(){
+    var a=document.activeElement,typing=a&&(a.tagName==='INPUT'||a.tagName==='TEXTAREA');
+    if(!typing&&(window.scrollY||window.scrollX))window.scrollTo(0,0);
+  },{passive:true});
+  ['addText','addWord','addRu'].forEach(function(id){$(id).addEventListener('input',renderAdd)});
+  ['addWord','addRu','addRead'].forEach(function(id){$(id).addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();submitAdd()}})});
+  $('addSave').addEventListener('click',submitAdd);
+  $('delCard').addEventListener('click',function(){
+    if(delArmed){deleteCurrent();return}
+    delArmed=true;render();
+  });
+  $('again').addEventListener('click',function(){fling(-1)});
+  $('know').addEventListener('click',function(){fling(1)});
+  $('noteBtn').addEventListener('click',resetPool);
+  $('reset').addEventListener('click',function(){if(resetArmed)resetPool();else{resetArmed=true;render()}});
+  document.addEventListener('keydown',function(e){
+    if(e.key==='Escape'&&!$('dlgWrap').hidden){closeDlg();return}
+    if(e.key==='Escape'&&!$('addWrap').hidden){closeAdd();return}
+    if(e.key==='Escape'&&!$('sheetWrap').hidden){closeSheet();return}
+    if(view!=='train'||e.target!==document.body)return;
+    if(e.key===' '){e.preventDefault();flip()}
+    else if(e.key==='ArrowRight')fling(1);
+    else if(e.key==='ArrowLeft')fling(-1);
+    else if(e.key==='ArrowUp'||e.key==='Backspace'){e.preventDefault();undo()}
+    else if(e.key==='Escape')go('folder');
+  });
+
+  /* An iPhone home-screen app can report a viewport shorter than the screen, which leaves an empty band
+     at the bottom. When that gap is there, stretch the page and the background to the real screen height. */
+  if(window.navigator.standalone===true){
+    var fitScreen=function(){
+      var w=window.innerWidth,h=Math.min(window.innerHeight,document.documentElement.clientHeight||window.innerHeight);
+      var full=h>=w?Math.max(screen.height,screen.width):Math.min(screen.height,screen.width);
+      var gap=full-h,root=document.documentElement;
+      if(gap>0&&gap<=90)root.style.setProperty('--app-h',full+'px');
+      else if(gap<=0)root.style.removeProperty('--app-h');
+    };
+    fitScreen();window.addEventListener('orientationchange',function(){setTimeout(fitScreen,300)});
+  }
+
+  /* No rubber band: a vertical drag that has nowhere to scroll (the content fits, or the list is already
+     at its top or bottom edge) is swallowed, so the screen cannot be pulled away from its place. */
+  (function(){
+    var sc=$('scroll'),x0=0,y0=0;
+    sc.addEventListener('touchstart',function(e){
+      x0=e.touches[0].clientX;y0=e.touches[0].clientY;
+      /* never start a drag exactly on an edge: a drag that starts there is what the system turns into a pull */
+      var max=sc.scrollHeight-sc.clientHeight;
+      if(max>1){if(sc.scrollTop<=0)sc.scrollTop=1;else if(sc.scrollTop>=max)sc.scrollTop=max-1}
+    },{passive:true});
+    sc.addEventListener('touchmove',function(e){
+      if(e.touches.length>1||!e.cancelable)return;
+      var dx=e.touches[0].clientX-x0,dy=e.touches[0].clientY-y0,max=sc.scrollHeight-sc.clientHeight;
+      if(max<=1){e.preventDefault();return}
+      if(Math.abs(dx)>Math.abs(dy))return;
+      if((sc.scrollTop<=1&&dy>0)||(sc.scrollTop>=max-1&&dy<0))e.preventDefault();
+    },{passive:false});
+    /* nothing outside the scrolling layer and the sheets' own lists may move the page either */
+    document.addEventListener('touchmove',function(e){
+      if(!e.cancelable||e.touches.length>1)return;
+      var t=e.target;
+      if(t.closest&&(t.closest('#scroll')||t.closest('.sheet-list')||t.closest('.sheet-body')||t.closest('textarea')))return;
+      e.preventDefault();
+    },{passive:false});
+  })();
+
+  /* keep the sheets above the on-screen keyboard */
+  if(window.visualViewport){
+    var vv=window.visualViewport,fit=function(){
+      var appH=parseFloat(document.documentElement.style.getPropertyValue('--app-h'))||0;
+      var keyboard=window.innerHeight-vv.height>80||vv.offsetTop>0;
+      var h=keyboard?vv.height:Math.max(vv.height,appH);
+      ['sheetWrap','addWrap','dlgWrap'].forEach(function(id){var w=$(id);w.style.top=vv.offsetTop+'px';w.style.height=h+'px';w.style.bottom='auto'});
+    };
+    vv.addEventListener('resize',fit);vv.addEventListener('scroll',fit);fit();
+  }
+
+  render();
+  setTimeout(function(){entering=false},0);
+
+  /* standalone build: cards ship with the app, progress and languages stay on this device */
+  base=(window.CARDS||[]).filter(function(c){return c.ru&&c.word&&c.lang});
+  merge();loaded=true;rebuild(false);
+  $('ver').textContent='build 16.10 23:38';
+  render();
+  if('serviceWorker' in navigator&&location.protocol.indexOf('http')===0){
+    navigator.serviceWorker.register('sw.js').catch(function(){});
+  }
+})();
+</script>
+
+</body>
+</html>
