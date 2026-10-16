@@ -108,6 +108,45 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
 .go.last{background:var(--ink)}
 .go svg{width:18px;height:18px}
 .tip{margin:2px 4px 0;font-size:13px;color:var(--on-muted)}
+/* home tiles: where the person stopped (black, like the back of a card) and the language with most words learned */
+.tiles{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.tile{position:relative;overflow:hidden;aspect-ratio:1;min-width:0;border-radius:var(--r);padding:14px;display:flex;flex-direction:column;
+  text-align:left;transition:transform .14s;-webkit-user-select:none;user-select:none}
+.tile:active{transform:scale(.97)}
+.tile:disabled{cursor:default}.tile:disabled:active{transform:none}
+.tile.dark{background:var(--ink);color:#fff;box-shadow:0 16px 30px -20px rgba(3,8,60,.9)}
+.tile .tsig{position:absolute;right:-6px;bottom:-22px;font-size:120px;font-weight:800;line-height:1;color:var(--mist);pointer-events:none;white-space:nowrap}
+.tile.dark .tsig{color:rgba(255,255,255,.07)}
+.tile .tsig.arab{bottom:-30px;font-size:100px}
+.tile>*:not(.tsig){position:relative}
+.tlabel{font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+.tile.dark .tlabel{color:rgba(255,255,255,.6)}
+.ttop{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
+.tgo{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;flex:none;background:var(--blue);color:#fff}
+.tgo svg{width:15px;height:15px}
+.tmain{margin-top:auto;display:flex;flex-direction:column;gap:3px;min-width:0}
+.tbig{font-size:21px;font-weight:800;letter-spacing:-.02em;line-height:1.12;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow-wrap:anywhere}
+.tbig.arab{font-weight:700;line-height:1.35;-webkit-line-clamp:1}
+.tsmall{font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums}
+.tile.dark .tsmall{color:rgba(255,255,255,.66)}
+.tile .badge{width:44px;height:44px;margin-top:10px}
+.tile .badge.code{font-size:16px}
+.tfoot{display:flex;align-items:center;gap:10px;margin-top:8px}
+.tbar{flex:1;height:5px;border-radius:99px;background:rgba(255,255,255,.16);overflow:hidden}
+.tbar i{display:block;height:100%;border-radius:99px;background:var(--blue-lift);transition:width .55s cubic-bezier(.2,.8,.2,1)}
+.tile.empty .tbig{font-size:18px}
+.tile.dark .tsmall{white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+/* the smallest phones: the tiles may grow a little taller than square so nothing is cut */
+@media (max-width:340px){ .tile{padding:12px;aspect-ratio:auto;min-height:146px} .tbig{font-size:18px} .tile .badge{width:36px;height:36px} }
+/* "Мои языки": a header that folds the language list away and back */
+.lhead{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:44px;margin:4px 0 -2px;padding:0 4px;width:100%}
+.lhead .h2{margin:0}
+.lhead .round{width:34px;height:34px}
+.lhead .round svg{width:18px;height:18px;transition:transform .3s cubic-bezier(.2,.8,.2,1)}
+.lhead[aria-expanded="true"] .round svg{transform:rotate(90deg)}
+.lwrap{display:flex;flex-direction:column;gap:14px}
+.lwrap[hidden],.lhead[hidden],.tiles[hidden]{display:none}
+.tile.empty .tsmall{white-space:normal}
 
 /* top bar on inner screens */
 .bar{display:flex;align-items:center;gap:10px;min-height:46px}
@@ -342,8 +381,15 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
         </button>
       </div>
     </header>
-    <div class="lang-list" id="langList"></div>
-    <p class="tip" id="swipeTip">Чтобы убрать язык, смахните его влево.</p>
+    <div class="tiles" id="tiles" hidden></div>
+    <button type="button" class="lhead" id="langsToggle" aria-expanded="true" aria-controls="langWrap">
+      <span class="h2">Мои языки</span>
+      <span class="round glass" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg></span>
+    </button>
+    <div class="lwrap" id="langWrap">
+      <div class="lang-list" id="langList"></div>
+      <p class="tip" id="swipeTip">Чтобы убрать язык, смахните его влево.</p>
+    </div>
     <p class="tip ver" id="ver"></p>
   </section>
 
@@ -1249,8 +1295,107 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
       list.textContent='';openRow=null;homeKey=key;
       langs.forEach(function(l){list.appendChild(langRow(l))});
     }
-    if(entering)stagger(list.children);
+    var tiles=$('tiles');
+    tiles.textContent='';tiles.hidden=!(loaded&&!failed&&langs.length);
+    if(!tiles.hidden){tiles.appendChild(stopTile());tiles.appendChild(favTile())}
+    $('langsToggle').hidden=!langs.length;
+    if(entering){stagger(tiles.children);if(langsOpen)stagger(list.children)}
     $('swipeTip').hidden=!langs.length;
+  }
+
+  /* --- home tiles --- */
+  /* the folder the person last trained in, with the words of it that are still there */
+  function lastSpot(){
+    var s=obj(store.get('last',null));
+    if(typeof s.lang!=='string'||!active(s.lang))return null;
+    var t=typeof s.topic==='string'?s.topic:'',pg=typeof s.page==='string'?s.page:'';
+    var list=ofLang(s.lang).filter(function(c){return t?tname(c)===t:pageOf(s.lang,tname(c))===pg});
+    if(!list.length)return null;
+    /* "Все слова" of one page: the page is named too when there are several */
+    var ps=getPages(s.lang),where=!t&&ps.length>1?(ps.filter(function(p){return p.id===pg})[0]||{}).name:'';
+    return {lang:s.lang,topic:t,page:pg,list:list,name:t?shown(s.lang,t):'Все слова',where:where||''};
+  }
+  function tileHead(b,label,arrow){
+    var top=el('div','ttop');top.appendChild(el('span','tlabel',label));
+    if(arrow){var g=el('span','tgo');g.innerHTML=CHEV;top.appendChild(g)}
+    b.appendChild(top);
+  }
+  function tileSig(b,l){var s=el('span','tsig'+(l.arab?' arab':''),glyph(l));s.setAttribute('aria-hidden','true');b.appendChild(s)}
+  function stopTile(){
+    var s=lastSpot(),b=el('button','tile dark'+(s?'':' empty')),m=el('div','tmain');b.type='button';
+    if(!s){
+      b.disabled=true;tileHead(b,'Вы остановились на',false);
+      m.appendChild(el('span','tbig','Ещё нигде'));
+      m.appendChild(el('span','tsmall','Откройте папку и нажмите «Учить»'));
+      b.appendChild(m);return b;
+    }
+    var l=L(s.lang),n=s.list.length,done=s.list.filter(function(c){return known[c.id]}).length;
+    tileSig(b,l);tileHead(b,'Вы остановились на',false);
+    m.appendChild(el('span','tbig',s.name));
+    m.appendChild(el('span','tsmall',l.name+(s.where?' · '+s.where:'')+' · '+(done<n?done+' из '+n:'всё выучено')));
+    var foot=el('div','tfoot'),bar=el('div','tbar'),fill=el('i'),g=el('span','tgo');
+    g.innerHTML=CHEV;bar.appendChild(fill);foot.appendChild(bar);foot.appendChild(g);m.appendChild(foot);
+    var w=(done/n*100).toFixed(1)+'%';
+    if(entering&&!reduce){fill.style.width='0';setTimeout(function(){fill.style.width=w},260)}else fill.style.width=w;
+    b.appendChild(m);
+    b.setAttribute('aria-label','Продолжить: '+s.name+', '+l.name+', выучено '+done+' из '+n);
+    b.addEventListener('click',function(){
+      lang=s.lang;lastLang=s.lang;store.set('lang',s.lang);topic=s.topic;pageId=s.page;lastPage[s.lang]=s.page;
+      /* straight back to the cards; a folder already learned opens its word list instead */
+      if(pool().some(function(c){return !known[c.id]}))train();else go('folder');
+    });
+    return b;
+  }
+  /* the language with the most words learned on this device */
+  function favTile(){
+    var best=null,max=0;
+    langs.forEach(function(l){
+      var k=ofLang(l.id).filter(function(c){return known[c.id]}).length;
+      if(k>max){max=k;best=l}
+    });
+    var b=el('button','tile panel'+(best?'':' empty')),m=el('div','tmain');b.type='button';
+    if(!best){
+      b.disabled=true;tileHead(b,'Ваш фаворит',false);
+      m.appendChild(el('span','tbig','Пока нет'));
+      m.appendChild(el('span','tsmall','Выучите первое слово'));
+      b.appendChild(m);return b;
+    }
+    tileSig(b,best);tileHead(b,'Ваш фаворит',true);
+    b.appendChild(badge(best));
+    var e=el('span','tbig',best.endo);
+    if(best.arab){e.classList.add('arab');e.dir='rtl';e.style.textAlign='left'}
+    m.appendChild(e);
+    m.appendChild(el('span','tsmall','Выучено '+words(max)));
+    b.appendChild(m);
+    b.setAttribute('aria-label','Ваш фаворит: '+best.name+', выучено '+words(max));
+    b.addEventListener('click',function(){
+      lang=best.id;lastLang=best.id;store.set('lang',best.id);topic='';pageId=lastPage[best.id]||null;go('topics');
+    });
+    return b;
+  }
+
+  /* --- "Мои языки" folds away and back; the choice is kept on this device --- */
+  var langsOpen=store.get('langsOpen',true)!==false,foldAnim=null;
+  function applyLangs(animate){
+    var w=$('langWrap'),t=$('langsToggle');
+    t.setAttribute('aria-expanded',langsOpen?'true':'false');
+    t.setAttribute('aria-label',langsOpen?'Мои языки: свернуть список':'Мои языки: открыть список');
+    if(foldAnim){foldAnim.cancel();foldAnim=null}
+    w.style.overflow='';
+    if(!animate||reduce||!w.animate){w.hidden=!langsOpen;fits();return}
+    if(langsOpen){
+      w.hidden=false;w.style.overflow='hidden';
+      foldAnim=anim(w,[{height:'0px',opacity:0},{height:w.offsetHeight+'px',opacity:1}],340);
+      stagger($('langList').children);
+      after(foldAnim,340,function(){if(langsOpen){w.style.overflow='';foldAnim=null;fits()}});
+    }else{
+      w.style.overflow='hidden';
+      foldAnim=anim(w,[{height:w.offsetHeight+'px',opacity:1},{height:'0px',opacity:0}],260,{fill:'forwards'});
+      after(foldAnim,260,function(){
+        if(langsOpen)return;
+        w.hidden=true;w.style.overflow='';if(foldAnim){foldAnim.cancel();foldAnim=null}fits();
+      });
+    }
   }
 
   function ring(done,total){
@@ -1744,8 +1889,13 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
     if(!p.length)return;
     /* everything already learned: start the folder over */
     if(!p.some(function(c){return !known[c.id]})){p.forEach(function(c){mark(c.id,false)});persist()}
-    history=[];rebuild(true);shownId=null;go('train');
+    train();
   });
+  function train(){
+    /* remembered for the "Вы остановились на" tile on the home screen */
+    store.set('last',{lang:lang,topic:topic,page:curPage()});
+    history=[];rebuild(true);shownId=null;go('train');
+  }
   $('prevWord').addEventListener('click',undo);
   $('addWords2').addEventListener('click',openAdd);
   $('restoreWords').addEventListener('click',function(){
@@ -1753,6 +1903,11 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
     store.set('hword',hword);merge();entering=true;render();entering=false;
   });
   $('addLang').addEventListener('click',openSheet);
+  $('langsToggle').addEventListener('click',function(){
+    if(openRow)openRow.close();
+    langsOpen=!langsOpen;store.set('langsOpen',langsOpen);applyLangs(true);
+  });
+  applyLangs(false);
   $('sheetClose').addEventListener('click',closeSheet);
   $('sheetWrap').addEventListener('click',function(e){if(e.target===this)closeSheet()});
   $('langSearch').addEventListener('input',renderSheet);
@@ -1860,7 +2015,7 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
   /* standalone build: cards ship with the app, progress and languages stay on this device */
   base=(window.CARDS||[]).filter(function(c){return c.ru&&c.word&&c.lang});
   merge();loaded=true;rebuild(false);
-  $('ver').textContent='build 16.10 23:38';
+  $('ver').textContent='build 16.10 23:58';
   render();
   if('serviceWorker' in navigator&&location.protocol.indexOf('http')===0){
     navigator.serviceWorker.register('sw.js').catch(function(){});
