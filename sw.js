@@ -1,5 +1,5 @@
 // Offline support: take the fresh copy from the network when there is one, fall back to the cache without it.
-const CACHE = 'linguaaa-20261016235833';
+const CACHE = 'linguaaa-20261020214123';
 const SHELL = ['./', 'index.html', 'cards.js', 'manifest.webmanifest', 'icon-180.png', 'icon-512.png'];
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)));

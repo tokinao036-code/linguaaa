@@ -350,6 +350,55 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
 .cta:active:not(:disabled){transform:scale(.97)}
 .cta:disabled{opacity:.4;cursor:default}
 
+/* language screen: words or speed reading, switched at the top */
+.mode{margin-left:auto;display:flex;gap:2px;padding:3px;border-radius:999px;flex:none}
+.mode button{min-height:38px;padding:0 14px;border-radius:999px;font-weight:700;font-size:14px;text-align:center;transition:background-color .2s,color .2s}
+.mode button[aria-pressed="true"]{background:#fff;color:var(--ink)}
+.pane{display:flex;flex-direction:column;gap:14px}
+.pane[hidden],.rcard[hidden]{display:none}
+.folder .ficon.txt svg{width:22px;height:22px;color:var(--blue)}
+.folder .play{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;flex:none;background:var(--blue);color:#fff}
+.folder .play svg{width:15px;height:15px;margin-left:2px}
+@media (max-width:340px){ .mode button{padding:0 10px;font-size:13px} }
+
+/* speed reading: one sentence at a time on a wide card; when its time runs out the card turns to the reading */
+.rstage{flex:1;min-height:280px;display:flex;align-items:center}
+.rstage .note{flex:1;align-self:stretch}
+.rcard{position:relative;width:100%;aspect-ratio:16/10;min-height:210px;max-height:60vh;border-radius:30px;padding:18px 20px;display:flex;flex-direction:column;gap:10px;
+  cursor:pointer;touch-action:pan-y;-webkit-user-select:none;user-select:none;will-change:transform;-webkit-tap-highlight-color:transparent;transition:background-color .25s,color .25s}
+.rcard.is-back{background:var(--ink);color:#fff}
+.rmid{flex:1;display:flex;align-items:center;justify-content:center;min-height:0;overflow:hidden}
+.rtext{margin:0;max-width:100%;text-align:center;text-wrap:balance;font-weight:800;font-size:26px;line-height:1.22;letter-spacing:-.02em;overflow-wrap:anywhere}
+.rtext.m{font-size:22px}
+.rtext.l{font-size:19px;font-weight:700;letter-spacing:-.01em}
+.rtext.xl{font-size:16px;font-weight:700;line-height:1.35;letter-spacing:0}
+.rtext.arab{font-family:var(--arabic);font-weight:700;letter-spacing:0;line-height:1.75;font-size:27px}
+.rtext.arab.m{font-size:23px}.rtext.arab.l{font-size:20px}.rtext.arab.xl{font-size:17px}
+.is-back .rtext{font-weight:700;color:rgba(255,255,255,.94)}
+.rfoot{display:flex;align-items:center;gap:12px}
+.rtime{flex:1;height:5px;border-radius:99px;background:var(--mist);overflow:hidden}
+.is-back .rtime{background:rgba(255,255,255,.16)}
+.rtime i{display:block;height:100%;border-radius:99px;background:var(--blue);transform-origin:left center}
+.is-back .rtime i{background:#fff}
+.rsec{min-width:30px;text-align:right;font-size:13px;font-weight:700;color:var(--muted);font-variant-numeric:tabular-nums}
+.is-back .rsec{color:rgba(255,255,255,.6)}
+.rpause{position:absolute;left:50%;top:14px;transform:translateX(-50%);padding:6px 12px;border-radius:10px;background:var(--blue);color:#fff;font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;pointer-events:none}
+.rpause[hidden]{display:none}
+.is-back .rpause{background:#fff;color:var(--ink)}
+.rcard.paused .rtime i{opacity:.45}
+/* seconds for a sentence and for its reading: a slider with a step button on each side */
+.secs{display:flex;flex-direction:column;gap:4px;transition:opacity .2s}
+.secs.off{opacity:.42}
+.secs .stop{display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:0 4px}
+.secs label{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.secs output{font-weight:800;font-size:17px;color:var(--ink);font-variant-numeric:tabular-nums}
+.secs .ctl{display:grid;grid-template-columns:40px 1fr 40px;gap:10px;align-items:center}
+.secs .ctl button{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;background:var(--mist);color:var(--ink);transition:transform .18s cubic-bezier(.2,.8,.2,1)}
+.secs .ctl button:active{transform:scale(.9)}
+.secs .ctl button svg{width:18px;height:18px}
+.secs input[type=range]{width:100%;height:30px;margin:0;accent-color:var(--blue);touch-action:pan-x}
+.field textarea.short{min-height:104px}
+
 /* motion: one easing for everything that opens, closes or is pressed */
 .round,.nav-back,.act,.x,.go,.new,.dock button,.note button,.folder{transition:transform .18s cubic-bezier(.2,.8,.2,1),background-color .2s,opacity .2s}
 .round:active,.nav-back:active,.act:active,.x:active,.new:active,.note button:active{transform:scale(.93)}
@@ -400,8 +449,26 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>
         Языки
       </button>
+      <div class="mode glass" role="group" aria-label="Режим">
+        <button type="button" id="tabWords" aria-pressed="true">Слова</button>
+        <button type="button" id="tabRead" aria-pressed="false">Скорочтение</button>
+      </div>
     </div>
     <div class="hero" id="hero"></div>
+    <div class="pane" id="readPane" hidden>
+      <h2 class="h2">Тексты</h2>
+      <div class="folders" id="texts"></div>
+      <div class="note panel" id="textsNote" hidden>
+        <h2>Текстов пока нет</h2>
+        <p>Добавьте текст кнопкой ниже: каждое предложение с новой строки. Предложения будут появляться по очереди на время, которое вы выберете.</p>
+      </div>
+      <button type="button" class="add-words glass" id="addTextBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+        Добавить текст
+      </button>
+      <button type="button" class="restore" id="restoreTexts" hidden>Вернуть пример текста</button>
+    </div>
+    <div class="pane" id="wordsPane">
     <nav class="pages" id="pages" aria-label="Страницы с папками"></nav>
     <div class="fbar" id="fbar">
       <h2 class="h2">Папки</h2>
@@ -422,6 +489,45 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
       Поделиться папками
     </button>
     <button type="button" class="restore" id="restoreFolders" hidden></button>
+    </div>
+  </section>
+
+  <!-- 2б. Скорочтение: предложения по очереди на горизонтальной карточке -->
+  <section class="view" id="vRead" hidden>
+    <div class="bar">
+      <button type="button" class="nav-back glass" id="readBack">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>
+        Тексты
+      </button>
+      <div class="bar-title" id="readTitle"></div>
+    </div>
+    <main class="stage rstage">
+      <div class="rcard panel" id="rcard" role="button" tabindex="0" aria-label="Нажмите, чтобы поставить на паузу. Смахните влево — следующее предложение, вправо — предыдущее">
+        <div class="meta"><span id="rLabel"></span><span id="rCount"></span></div>
+        <div class="rmid"><p class="rtext" id="rText" aria-live="polite"></p></div>
+        <div class="rfoot"><div class="rtime" aria-hidden="true"><i id="rFill"></i></div><span class="rsec" id="rSec"></span></div>
+        <span class="rpause" id="rPaused" hidden>Пауза</span>
+      </div>
+      <div class="note panel" id="rNote" hidden>
+        <h2>Текст прочитан</h2>
+        <p id="rNoteText"></p>
+        <button type="button" id="rAgain">Читать заново</button>
+      </div>
+    </main>
+    <div class="status">
+      <span id="rLeft"></span>
+      <div class="meter" aria-hidden="true"><i id="rAll"></i></div>
+    </div>
+    <div class="dock glass">
+      <button type="button" id="rPrev" class="prev" aria-label="Предыдущее предложение">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 14L4 9l5-5"/><path d="M4 9h10.500a5.500 5.500 0 0 1 0 11H11"/></svg>
+      </button>
+      <button type="button" id="rPlay"></button>
+      <button type="button" id="rNext" class="know">
+        Дальше
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg>
+      </button>
+    </div>
   </section>
 
   <!-- 3. Папка: список слов -->
@@ -675,6 +781,199 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
   var TRASH='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-12M9 7V4h6v3"/></svg>';
   var MOVE='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12h15M13 6l6 6-6 6"/></svg>';
   var PENCIL='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20l1-4.500L16.500 4l3.500 3.500L8.500 19z"/></svg>';
+  var LINES='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h10"/></svg>';
+  var PLAY='<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4.500v15l12.500-7.500z"/></svg>';
+  var PAUSE='<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="4.500" width="4" height="15" rx="1.200"/><rect x="14" y="4.500" width="4" height="15" rx="1.200"/></svg>';
+  /* speed reading: one example text per built-in language, a sentence per line, the reading in Russian letters line by line */
+  var READS={
+    en:{name:'Утро в городе',lines:[
+      'In the morning, Anna drinks coffee on the balcony.',
+      'Her grey cat is sleeping by the window.',
+      'Children are running to school and laughing.',
+      'The baker on the corner sells warm bread.',
+      'Tonight we are going to the cinema with friends.'],trans:[
+      'ин зэ мОрнинг, Энна дринкс кОфи он зэ бЭлкэни.',
+      'хёр грэй кэт из слИпинг бай зэ уИндоу.',
+      'чИлдрэн ар рАнинг ту скул энд лАфинг.',
+      'зэ бЭйкер он зэ кОрнер сэлз уорм брэд.',
+      'тунАйт уи ар гОуинг ту зэ сИнема уиз фрэндз.']},
+    ar:{name:'Утро в городе',lines:[
+      'فِي الصَّبَاحِ تَشْرَبُ لَيْلَى الْقَهْوَةَ.',
+      'الْقِطُّ الرَّمَادِيُّ نَائِمٌ قُرْبَ النَّافِذَةِ.',
+      'الْأَطْفَالُ يَذْهَبُونَ إِلَى الْمَدْرَسَةِ.',
+      'الْخَبَّازُ يَبِيعُ خُبْزًا سَاخِنًا.',
+      'فِي الْمَسَاءِ نَذْهَبُ إِلَى السِّينَمَا مَعَ أَصْدِقَائِنَا.'],trans:[
+      'фи с-сабАхи тАшрабу лЯйля ль-кАхвата.',
+      'аль-кИтту р-рамАдийю нАимун кУрба н-нАфизати.',
+      'аль-атфАлю язхабУна иля ль-мАдрасати.',
+      'аль-хаббАзу ябИу хУбзан сАхинан.',
+      'фи ль-масАи нАзхабу иля с-сИнама мАа асдикАина.']},
+    fr:{name:'Утро в городе',lines:[
+      'Le matin, Claire prend un café au lait sur la terrasse.',
+      'Son chat gris dort tranquillement près de la fenêtre.',
+      'Dans la rue, les enfants courent vers l\'école en riant.',
+      'Le boulanger du coin vend des croissants encore chauds.',
+      'Ce soir, nous irons voir un film au cinéma avec nos amis.'],trans:[
+      'лё матэн, клэр пран эн кафе о лэ сюр ла тэрас.',
+      'сон ша гри дор транкильман прэ дё ла фёнэтр.',
+      'дан ла рю, лез анфан кур вэр лекол ан рийан.',
+      'лё буланже дю куэн ван де круасан анкор шо.',
+      'сё суар, ну зирон вуар эн фильм о синема авэк но зами.']},
+    ms:{name:'Утро в городе',lines:[
+      'Pada waktu pagi, Aminah minum kopi di beranda.',
+      'Kucing kelabunya tidur di tepi tingkap.',
+      'Kanak-kanak berlari ke sekolah sambil ketawa.',
+      'Kedai roti di hujung jalan menjual roti panas.',
+      'Malam ini kami menonton wayang bersama kawan-kawan.'],trans:[
+      'пАда вАкту пАги, амИнах мИнум кОпи ди берАнда.',
+      'кУчинг келабУнья тИдур ди тЕпи тИнгкап.',
+      'кАнак-кАнак берлАри ке секОлах сАмбиль кетАва.',
+      'кедАй рОти ди хУджунг джАлан менджУал рОти пАнас.',
+      'мАлам Ини кАми менОнтон вАянг берсАма кАван-кАван.']},
+    es:{name:'Утро в городе',lines:[
+      'Por la mañana, Lucía toma café en la terraza.',
+      'Su gato gris duerme junto a la ventana.',
+      'En la calle, los niños corren a la escuela riendo.',
+      'El panadero de la esquina vende pan caliente.',
+      'Esta noche vamos al cine con nuestros amigos.'],trans:[
+      'пор ла маньЯна, лусИя тОма кафЕ эн ла террАса.',
+      'су гАто грис дуЭрме хУнто а ла вентАна.',
+      'эн ла кАйе, лос нИньос кОррен а ла эскуЭла рьЕндо.',
+      'эль панадЕро де ла эскИна вЕнде пан кальЕнте.',
+      'Эста нОче вАмос аль сИне кон нуЭстрос амИгос.']},
+    de:{name:'Утро в городе',lines:[
+      'Am Morgen trinkt Anna Kaffee auf dem Balkon.',
+      'Ihre graue Katze schläft am Fenster.',
+      'Die Kinder laufen lachend zur Schule.',
+      'Der Bäcker an der Ecke verkauft warmes Brot.',
+      'Heute Abend gehen wir mit Freunden ins Kino.'],trans:[
+      'ам мОрген тринкт Ана кАфе ауф дэм балкОн.',
+      'Ире грАуэ кАце шлефт ам фЕнстер.',
+      'ди кИндер лАуфен лАхенд цур шУле.',
+      'дэр бЕккер ан дэр Экке феркАуфт вАрмес брот.',
+      'хОйте Абенд гЕен вир мит фрОйнден инс кИно.']},
+    it:{name:'Утро в городе',lines:[
+      'La mattina, Giulia beve un caffè in terrazza.',
+      'Il suo gatto grigio dorme vicino alla finestra.',
+      'Per strada i bambini corrono a scuola ridendo.',
+      'Il fornaio all\'angolo vende pane caldo.',
+      'Stasera andiamo al cinema con gli amici.'],trans:[
+      'ла маттИна, джУлия бЕве ун каффЭ ин террАцца.',
+      'иль сУо гАтто грИджо дОрме вичИно Алла финЕстра.',
+      'пер стрАда и бамбИни кОрроно а скуОла ридЕндо.',
+      'иль форнАйо аллАнголо вЕнде пАне кАльдо.',
+      'стазЕра андьЯмо аль чИнема кон льи амИчи.']},
+    pt:{name:'Утро в городе',lines:[
+      'De manhã, a Inês bebe café na varanda.',
+      'O seu gato cinzento dorme junto à janela.',
+      'Na rua, as crianças correm para a escola a rir.',
+      'O padeiro da esquina vende pão quente.',
+      'Esta noite vamos ao cinema com os amigos.'],trans:[
+      'дэ маньЯ, а инЭш бЭбэ кафЭ на варАнда.',
+      'у сЭу гАту синзЕнту дОрмэ жУнту а жанЭла.',
+      'на рУа, аш криАнсаш кОррэм пАра а шкОла а рир.',
+      'у падЭйру да шкИна вЕндэ пау кЕнтэ.',
+      'Эшта нОйтэ вАмуш ау синЭма ком уз амИгуш.']},
+    tr:{name:'Утро в городе',lines:[
+      'Sabah Ayşe balkonda kahve içiyor.',
+      'Gri kedisi pencerenin yanında uyuyor.',
+      'Çocuklar gülerek okula koşuyor.',
+      'Köşedeki fırıncı sıcak ekmek satıyor.',
+      'Bu akşam arkadaşlarla sinemaya gidiyoruz.'],trans:[
+      'сабАх Айше балкондА кахвЕ ичийОр.',
+      'гри кедисИ пенджеренИн янындА уюйОр.',
+      'чоджуклАр гюлЕрек окулА кошуйОр.',
+      'кёшедекИ фырынджЫ сыджАк экмЕк сатыйОр.',
+      'бу акшАм аркадашлАрла синемайА гидийОруз.']},
+    zh:{name:'Утро в городе',lines:[
+      '早上，小美在阳台上喝咖啡。',
+      '她的灰猫在窗边睡觉。',
+      '孩子们笑着跑去上学。',
+      '街角的面包店卖热面包。',
+      '今晚我们和朋友去看电影。'],trans:[
+      'цзаошан, сяо мэй цзай янтай шан хэ кафэй.',
+      'та дэ хуэй мао цзай чуан бянь шуйцзяо.',
+      'хайцзымэнь сяочжэ пао цюй шансюэ.',
+      'цзецзяо дэ мяньбаодянь май жэ мяньбао.',
+      'цзиньвань вомэнь хэ пэнъю цюй кань дяньин.']},
+    ja:{name:'Утро в городе',lines:[
+      '朝、さくらはベランダでコーヒーを飲みます。',
+      '灰色の猫は窓のそばで寝ています。',
+      '子どもたちは笑いながら学校へ走ります。',
+      '角のパン屋は温かいパンを売っています。',
+      '今晩、友だちと映画を見に行きます。'],trans:[
+      'аса, сакура ва бэранда дэ кохи о номимас.',
+      'хайиро но нэко ва мадо но соба дэ нэтэ имас.',
+      'кодомотати ва вараинагара гакко э хасиримас.',
+      'кадо но панъя ва ататакай пан о уттэ имас.',
+      'комбан, томодати то эйга о ми ни икимас.']},
+    ko:{name:'Утро в городе',lines:[
+      '아침에 수아는 발코니에서 커피를 마셔요.',
+      '회색 고양이가 창가에서 자요.',
+      '아이들이 웃으면서 학교로 뛰어가요.',
+      '모퉁이 빵집에서 따뜻한 빵을 팔아요.',
+      '오늘 저녁에 친구들과 영화를 봐요.'],trans:[
+      'ачхимэ суанын палькхониэсо кхопхирыль масёё.',
+      'хвэсэк коянъига чхангаэсо чаё.',
+      'аидыри усымёнсо хаккёро ттвиогаё.',
+      'мотхуни ппанччибэсо ттаттытхан ппанъыль пхараё.',
+      'оныль чонёгэ чхингудыльгва ёнхварыль пваё.']},
+    fa:{name:'Утро в городе',lines:[
+      'صبح، مریم روی بالکن قهوه می‌نوشد.',
+      'گربه‌ی خاکستری‌اش کنار پنجره خوابیده است.',
+      'بچه‌ها خندان به مدرسه می‌دوند.',
+      'نانوایی سر کوچه نان گرم می‌فروشد.',
+      'امشب با دوستانمان به سینما می‌رویم.'],trans:[
+      'собх, марьЯм рУе балькОн гахвЕ мИнушад.',
+      'горбейе хакестарИяш кенАре панджерЕ хабидЕ аст.',
+      'баччехА хандАн бе мадресЕ мИдаванд.',
+      'нанваИе сАре кучЕ нАне гарм мИфорушад.',
+      'емшАб ба дустанемАн бе синемА мИравим.']},
+    id:{name:'Утро в городе',lines:[
+      'Pagi ini, Sari minum kopi di teras.',
+      'Kucing abu-abunya tidur di dekat jendela.',
+      'Anak-anak berlari ke sekolah sambil tertawa.',
+      'Tukang roti di sudut jalan menjual roti hangat.',
+      'Malam ini kami menonton film bersama teman-teman.'],trans:[
+      'пАги Ини, сАри мИнум кОпи ди тЕрас.',
+      'кУчинг абу-абУнья тИдур ди дЕкат джендЕла.',
+      'Анак-Анак берлАри ке секОлах сАмбиль тертАва.',
+      'тУканг рОти ди сУдут джАлан менджУал рОти хАнгат.',
+      'мАлам Ини кАми менОнтон фильм берсАма тЕман-тЕман.']},
+    kk:{name:'Утро в городе',lines:[
+      'Таңертең Әйгерім балконда кофе ішеді.',
+      'Сұр мысығы терезенің жанында ұйықтап жатыр.',
+      'Балалар күліп мектепке жүгіреді.',
+      'Бұрыштағы наубайхана жылы нан сатады.',
+      'Бүгін кешке достарымызбен киноға барамыз.'],trans:[
+      'танертЕн айгерИм балкондА кОфе ишедИ.',
+      'сур мысыгЫ терезенИн жанындА уйыктАп жатЫр.',
+      'балалАр кюлИп мектепкЕ жюгиредИ.',
+      'бурыштагЫ наубайханА жылЫ нан сатадЫ.',
+      'бюгИн кешкЕ достарымызбЕн киногА барамЫз.']},
+    uz:{name:'Утро в городе',lines:[
+      'Ertalab Malika ayvonda qahva ichadi.',
+      'Kulrang mushugi deraza yonida uxlayapti.',
+      'Bolalar kulib maktabga yugurishyapti.',
+      'Burchakdagi novvoy issiq non sotadi.',
+      'Bugun kechqurun do\'stlarimiz bilan kinoga boramiz.'],trans:[
+      'эрталАб маликА айвондА кахвА ичадИ.',
+      'кулрАнг мушугИ деразА ёнидА ухлаяптИ.',
+      'болалАр кулИб мактабгА югуришяптИ.',
+      'бурчакдагИ новвОй иссИк нон сотадИ.',
+      'бугУн кечкурУн дустларимИз билАн киногА борамИз.']},
+    tt:{name:'Утро в городе',lines:[
+      'Иртән Гөлназ балконда кофе эчә.',
+      'Аның соры мәчесе тәрәзә янында йоклый.',
+      'Балалар көлә-көлә мәктәпкә йөгерә.',
+      'Почмактагы икмәк кибете җылы икмәк сата.',
+      'Бүген кич дусларыбыз белән кинога барабыз.'],trans:[
+      'иртЯн гюльнАз балкондА кОфе эчЯ.',
+      'анЫн сорЫ мячесЕ тярязЯ янындА йоклЫй.',
+      'балалАр кёлЯ-кёлЯ мяктяпкЯ йёгерЯ.',
+      'почмактагЫ икмЯк кибетЕ жылЫ икмЯк сатА.',
+      'бюгЕн кич дусларыбЫз белЯн киногА барабЫз.']}
+  };
   var FOLDER='<svg viewBox="0 0 24 20" aria-hidden="true"><path d="M1 3.5A2.5 2.5 0 0 1 3.5 1H9l2.5 3h9A2.5 2.5 0 0 1 23 6.500V8H1z" fill="#1437F5" opacity=".5"/><rect x="1" y="6.500" width="22" height="12.500" rx="2.500" fill="#1437F5"/></svg>';
 
   var $=function(id){return document.getElementById(id)};
@@ -773,6 +1072,30 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
   function tname(c){return c.topic||'Без темы'}
   /* hword: built-in words this person deleted (own words are simply removed); rev: foreign word first, Russian on the back */
   var hword=obj(store.get('hword',{})),rev=!!store.get('rev',false);
+  /* speed reading: the example text of a language (READS) plus the person's own texts; htext = examples they deleted.
+     All of it lives on this device only. */
+  var readMode=store.get('tab','')==='read';
+  function hasKey(o,k){return Object.prototype.hasOwnProperty.call(o,k)}
+  function secs(v,d){v=Math.round(Number(v));return v>=1&&v<=40?v:d}
+  function cleanTexts(list){
+    if(!Array.isArray(list))return [];
+    return list.filter(function(t){
+      return t&&typeof t.id==='string'&&IDRE.test(t.id)&&typeof t.lang==='string'&&IDRE.test(t.lang)&&Array.isArray(t.lines);
+    }).map(function(t){
+      var lines=t.lines.map(function(s){return String(s==null?'':s).trim().slice(0,300)}).filter(Boolean).slice(0,200);
+      var tr=(Array.isArray(t.trans)?t.trans:[]).slice(0,lines.length).map(function(s){return String(s==null?'':s).trim().slice(0,300)});
+      return {id:t.id,lang:t.lang,name:String(t.name||'Текст').trim().slice(0,40)||'Текст',lines:lines,trans:tr,tt:secs(t.tt,6),tr:secs(t.tr,4)};
+    }).filter(function(t){return t.lines.length});
+  }
+  var texts=cleanTexts(store.get('texts',[])),htext=cleanIds(store.get('htext',[]));
+  function textsOf(id){
+    var out=[];
+    if(hasKey(READS,id)&&htext.indexOf('ex-'+id)<0){
+      var x=READS[id];out.push({id:'ex-'+id,lang:id,name:x.name,lines:x.lines,trans:x.trans,tt:6,tr:4,builtIn:true});
+    }
+    return out.concat(texts.filter(function(t){return t.lang===id}));
+  }
+  function hasTrans(t){return t.trans.some(function(s){return !!s})}
   function lostFolder(c){var h=hfold[c.lang];return Array.isArray(h)&&h.indexOf(tname(c))>=0}
   function gone(c){return !!hword[c.id]||lostFolder(c)}
   function ofLang(id){return cards.filter(function(c){return c.lang===id&&!gone(c)})}
@@ -864,11 +1187,12 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
     if(a)node.style.overflow='hidden';
     after(a,300,done);
   }
-  var VIEWS={home:'vHome',topics:'vTopics',folder:'vFolder',train:'vTrain'},ORDER={home:0,topics:1,folder:2,train:3};
+  var VIEWS={home:'vHome',topics:'vTopics',folder:'vFolder',train:'vTrain',read:'vRead'},ORDER={home:0,topics:1,folder:2,read:2,train:3};
   function go(v){
     if(leaving)return;
     var dir=ORDER[v]>=ORDER[view]?1:-1,from=$(VIEWS[view]);
     var out=v===view?null:anim(from,[{opacity:1,transform:'none'},{opacity:0,transform:'translateX('+(-dir*22)+'px)'}],140,{easing:'ease-in',fill:'forwards'});
+    if(view==='read'&&v!=='read')rStop();
     function swap(){
       leaving=false;view=v;resetArmed=false;editing=false;
       if(openRow)openRow.close();
@@ -1476,7 +1800,11 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
   function renderTopics(){
     var l=L(lang),all=ofLang(lang),groups={},cur=curPage(),many=getPages(lang).length>1;
     var hero=$('hero');hero.textContent='';
-    hero.appendChild(badge(l));hero.appendChild(langText(l,loaded&&!failed?words(all.length):''));
+    var nt=textsOf(lang).length;
+    hero.appendChild(badge(l));hero.appendChild(langText(l,readMode?nt+' '+plural(nt,'текст','текста','текстов'):loaded&&!failed?words(all.length):''));
+    $('tabWords').setAttribute('aria-pressed',readMode?'false':'true');$('tabRead').setAttribute('aria-pressed',readMode?'true':'false');
+    $('wordsPane').hidden=readMode;$('readPane').hidden=!readMode;
+    if(readMode){renderTexts();return}
     renderPages();
     all.forEach(function(c){var t=tname(c);(groups[t]=groups[t]||[]).push(c)});
     var names=sortFolders(lang,Object.keys(groups).filter(function(t){return pageOf(lang,t)===cur}));
@@ -1501,6 +1829,220 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
       names.forEach(function(t){box.appendChild(folder(t,groups[t],false))});
     }
     if(entering)stagger(box.children);
+  }
+
+  /* --- speed reading: the list of texts --- */
+  function sentences(n){return n+' '+plural(n,'предложение','предложения','предложений')}
+  function renderTexts(){
+    var list=textsOf(lang),box=$('texts');box.textContent='';
+    box.hidden=!list.length;$('textsNote').hidden=!!list.length;
+    $('restoreTexts').hidden=!(hasKey(READS,lang)&&htext.indexOf('ex-'+lang)>=0);
+    list.forEach(function(t){box.appendChild(textRow(t))});
+    if(entering)stagger(box.children);
+  }
+  function textRow(t){
+    var b=el('button','folder panel');b.type='button';
+    var ic=el('span','ficon txt');ic.innerHTML=LINES;b.appendChild(ic);
+    var body=el('span','fbody');
+    body.appendChild(el('span','fname',t.name));
+    body.appendChild(el('span','fmeta',sentences(t.lines.length)+' · '+t.tt+' с'+(hasTrans(t)?' + транскрипция '+t.tr+' с':'')));
+    b.appendChild(body);
+    var pl=el('span','play');pl.innerHTML=PLAY;b.appendChild(pl);
+    b.setAttribute('aria-label','Читать: '+t.name);
+    /* slides left to uncover "delete"; an own text asks twice, an example can be brought back */
+    var wrap=el('div','swipe'),acts=el('div','facts'),armed=false;
+    var rm=el('button','fact rm');rm.type='button';rm.innerHTML=TRASH+'<span>Удалить</span>';
+    rm.setAttribute('aria-label','Удалить текст: '+t.name);
+    acts.appendChild(rm);wrap.appendChild(acts);wrap.appendChild(b);
+    swipeRow(wrap,b,acts,88,function(){openText(t)});
+    rm.addEventListener('click',function(){
+      if(!t.builtIn&&!armed){armed=true;rm.lastChild.textContent='Точно?';return}
+      vanish(wrap,10,function(){deleteText(t)});
+    });
+    return wrap;
+  }
+  function deleteText(t){
+    if(t.builtIn){if(htext.indexOf(t.id)<0)htext.push(t.id);store.set('htext',htext)}
+    else{texts=texts.filter(function(x){return x.id!==t.id});store.set('texts',texts)}
+    openRow=null;render();
+  }
+  function setMode(on){
+    if(readMode===on)return;
+    readMode=on;store.set('tab',on?'read':'words');
+    if(openRow)openRow.close();editing=false;
+    entering=true;render();entering=false;
+    anim($(on?'readPane':'wordsPane'),[{opacity:0,transform:'translateX('+(on?24:-24)+'px)'},{opacity:1,transform:'none'}],320);
+  }
+
+  /* --- speed reading: a new text, a sentence per line, the reading line by line, and the seconds for each --- */
+  function secsField(id,label,val,onChange){
+    var box=el('div','secs'),top=el('div','stop'),lab=el('label',null,label),out=document.createElement('output');
+    var ctl=el('div','ctl'),minus=el('button'),plus=el('button'),r=document.createElement('input');
+    lab.htmlFor=id;out.htmlFor=id;
+    r.type='range';r.id=id;r.min='1';r.max='40';r.step='1';r.value=String(val);
+    minus.type='button';minus.innerHTML=MINUS;minus.setAttribute('aria-label','Меньше на секунду');
+    plus.type='button';plus.innerHTML=PLUS;plus.setAttribute('aria-label','Больше на секунду');
+    function set(v){v=secs(v,val);r.value=String(v);out.textContent=v+' с';onChange(v)}
+    r.addEventListener('input',function(){set(r.value)});
+    minus.addEventListener('click',function(){set(Math.max(1,+r.value-1))});
+    plus.addEventListener('click',function(){set(Math.min(40,+r.value+1))});
+    top.appendChild(lab);top.appendChild(out);ctl.appendChild(minus);ctl.appendChild(r);ctl.appendChild(plus);
+    box.appendChild(top);box.appendChild(ctl);
+    out.textContent=val+' с';
+    return box;
+  }
+  function textField(id,label,tag,ph){
+    var f=el('div','field'),lab=el('label',null,label),inp=document.createElement(tag);
+    inp.id=id;lab.htmlFor=id;inp.autocomplete='off';
+    if(tag==='textarea'){inp.className='short';inp.dir='auto';inp.spellcheck=false;inp.setAttribute('autocapitalize','off')}
+    else{inp.type='text';inp.maxLength=40}
+    if(ph)inp.placeholder=ph;
+    f.appendChild(lab);f.appendChild(inp);return {box:f,input:inp};
+  }
+  function splitLines(v){return String(v).split(/\r?\n/).map(function(s){return s.trim()}).filter(Boolean)}
+  function openAddText(){
+    var l=L(lang),body=openDlg('Новый текст'),ex=hasKey(READS,lang)?READS[lang]:null;
+    var tt=secs(store.get('tt',6),6),tr=secs(store.get('tr',4),4);
+    var name=textField('txName','Название','input','Например: Утро в Париже');
+    var text=textField('txLines','Текст · '+l.name,'textarea',ex?ex.lines.slice(0,2).join('\n'):'Каждое предложение с новой строки');
+    var tran=textField('txTrans','Транскрипция (необязательно)','textarea',ex?ex.trans.slice(0,2).join('\n'):'По строке на каждое предложение');
+    if(l.arab)text.input.classList.add('arab');
+    var s1=secsField('txT','Время на предложение',tt,function(v){tt=v});
+    var s2=secsField('txR','Время на транскрипцию',tr,function(v){tr=v});
+    var help=el('p','help'),ok=el('button','cta','Добавить текст');ok.type='button';
+    [name.box,text.box,tran.box,s1,s2,help,ok].forEach(function(n){body.appendChild(n)});
+    function update(){
+      var a=splitLines(text.input.value).length,b=splitLines(tran.input.value).length;
+      help.textContent='';ok.disabled=!a;s2.classList.toggle('off',!b);
+      if(!a){help.textContent='Каждое предложение с новой строки. Транскрипцию тоже пишите по строкам: первая строка — к первому предложению и так далее.';return}
+      help.appendChild(el('b',null,'Предложений: '+a+(b?' · строк транскрипции: '+b:'')));
+      if(b&&b!==a)help.appendChild(document.createTextNode(b<a?'. Транскрипции меньше: у последних предложений её не будет.':'. Строк транскрипции больше, чем предложений: лишние не войдут.'));
+      else if(!b)help.appendChild(document.createTextNode('. Без транскрипции карточка не будет переворачиваться.'));
+    }
+    text.input.addEventListener('input',update);tran.input.addEventListener('input',update);
+    ok.addEventListener('click',function(){
+      var lines=splitLines(text.input.value).map(function(s){return s.slice(0,300)}).slice(0,200);
+      if(!lines.length){text.input.focus();return}
+      var tl=splitLines(tran.input.value).map(function(s){return s.slice(0,300)}).slice(0,lines.length);
+      var own=texts.filter(function(t){return t.lang===lang}).length;
+      texts.push({id:'t'+Date.now().toString(36),lang:lang,name:name.input.value.trim().slice(0,40)||'Текст '+(own+1),lines:lines,trans:tl,tt:tt,tr:tr});
+      store.set('texts',texts);store.set('tt',tt);store.set('tr',tr);
+      closeDlg();entering=true;render();entering=false;
+    });
+    update();
+  }
+
+  /* --- speed reading: the reader. A sentence shows for its seconds, then (if it has a reading) the card turns
+     over and shows the reading for its seconds, then the card flies off and the next one comes in. --- */
+  var R={t:null,i:0,phase:'text',paused:false,left:0,dur:1,last:0,raf:0,busy:false,done:false,fresh:false,sec:-1};
+  function openText(t){R.t=t;R.i=0;R.paused=false;R.done=false;R.fresh=true;go('read')}
+  function rN(){return R.t?R.t.lines.length:0}
+  function rTrans(i){return !!(R.t&&R.t.trans[i])}
+  function rStop(){
+    cancelAnimationFrame(R.raf);R.raf=0;
+    var c=$('rcard');if(c.getAnimations)c.getAnimations().forEach(function(a){a.cancel()});
+    c.style.transform='';c.style.opacity='';R.busy=false;
+  }
+  function rPut(){
+    var c=$('rcard'),l=L(R.t.lang),back=R.phase==='trans',s=back?R.t.trans[R.i]:R.t.lines[R.i],n=s.length,t=$('rText');
+    c.classList.toggle('is-back',back);
+    $('rLabel').textContent=back?'Транскрипция':l.name;
+    $('rCount').textContent=(R.i+1)+' / '+rN();
+    t.textContent=s;t.dir=!back&&l.arab?'rtl':'auto';
+    t.className='rtext'+(!back&&l.arab?' arab':'')+(n>140?' xl':n>80?' l':n>40?' m':'');
+  }
+  function rUi(){
+    var n=rN(),c=$('rcard');
+    $('rLeft').textContent=R.done?'Прочитано: '+sentences(n):'Предложение '+(R.i+1)+' из '+n;
+    $('rAll').style.width=(R.done?100:R.i/n*100)+'%';
+    var p=$('rPlay');p.innerHTML=(R.paused?PLAY+'<span>Читать</span>':PAUSE+'<span>Пауза</span>');
+    p.disabled=R.done;$('rNext').disabled=R.done;$('rPrev').disabled=R.done||(R.i===0&&R.phase==='text');
+    c.classList.toggle('paused',R.paused);$('rPaused').hidden=!R.paused;
+  }
+  function rBar(){
+    var p=Math.max(0,Math.min(1,R.left/R.dur));
+    $('rFill').style.transform='scaleX('+p.toFixed(4)+')';
+    var s=Math.max(0,Math.ceil(R.left/1000));
+    if(s!==R.sec){R.sec=s;$('rSec').textContent=s+' с'}
+  }
+  function rRun(){
+    R.dur=R.left=(R.phase==='text'?R.t.tt:R.t.tr)*1000;R.sec=-1;R.last=performance.now();rBar();rTick();
+  }
+  function rTick(){
+    cancelAnimationFrame(R.raf);R.raf=0;
+    if(view!=='read'||R.done||R.busy)return;
+    var now=performance.now();
+    if(!R.paused)R.left-=now-R.last;
+    R.last=now;rBar();
+    if(R.left<=0){rEnd();return}
+    if(!R.paused)R.raf=requestAnimationFrame(rTick);
+  }
+  /* the time of the current side is up (or "Дальше" was pressed) */
+  function rEnd(){
+    if(R.busy)return;
+    if(R.phase==='text'&&rTrans(R.i))rFlip();else rMove(1);
+  }
+  function rFlip(){
+    var c=$('rcard');
+    function swap(){R.phase='trans';rPut();rUi()}
+    if(reduce||!c.animate){swap();rRun();return}
+    R.busy=true;cancelAnimationFrame(R.raf);
+    var P='perspective(1200px) ';
+    after(c.animate([{transform:P+'rotateY(0deg) scale(1)'},{transform:P+'rotateY(90deg) scale(.96)'}],{duration:200,easing:'cubic-bezier(.5,0,.9,.5)'}),200,function(){
+      if(view!=='read'||!R.busy)return;
+      swap();
+      after(c.animate([{transform:P+'rotateY(-90deg) scale(.96)'},{transform:P+'rotateY(0deg) scale(1)'}],{duration:320,easing:EASE}),320,function(){
+        if(view!=='read'||!R.busy)return;
+        R.busy=false;rRun();
+      });
+    });
+  }
+  /* fly the card off (forward = to the left) and bring the next or previous sentence in from the other side */
+  function rMove(dir){
+    var c=$('rcard'),to=R.i+dir;
+    if(to<0)to=0;
+    function land(){
+      R.busy=false;c.style.transform='';c.style.opacity='';
+      if(to>=rN()){rFinish();return}
+      rShow(to,dir);
+    }
+    cancelAnimationFrame(R.raf);
+    if(reduce||!c.animate){land();return}
+    R.busy=true;
+    after(c.animate([{transform:'none',opacity:1},{transform:'translateX('+(-dir*110)+'%) rotate('+(-dir*8)+'deg)',opacity:0}],
+      {duration:280,easing:'cubic-bezier(.4,0,.8,.4)',fill:'forwards'}),280,function(){
+      if(view!=='read')return;
+      if(c.getAnimations)c.getAnimations().forEach(function(a){a.cancel()});
+      land();
+    });
+  }
+  function rShow(i,dir){
+    var c=$('rcard');
+    R.i=i;R.phase='text';R.done=false;
+    $('rNote').hidden=true;c.hidden=false;
+    rPut();rUi();
+    if(dir)anim(c,[{opacity:0,transform:'translateX('+(dir*70)+'%) rotate('+(dir*5)+'deg)'},{opacity:1,transform:'none'}],420);
+    else anim(c,[{opacity:0,transform:'translateY(18px) scale(.94)'},{opacity:1,transform:'none'}],380);
+    rRun();
+  }
+  function rFinish(){
+    rStop();R.done=true;R.paused=false;
+    $('rcard').hidden=true;$('rNote').hidden=false;
+    $('rNoteText').textContent=sentences(rN())+'. Можно прочитать ещё раз или вернуться к списку текстов.';
+    anim($('rNote'),[{opacity:0,transform:'scale(.96)'},{opacity:1,transform:'none'}],420);
+    rUi();
+  }
+  function rPause(on){
+    if(R.done)return;
+    R.paused=on;R.last=performance.now();rUi();
+    if(!on&&!R.busy)rTick();
+  }
+  function renderRead(){
+    if(!R.t){view='topics';renderTopics();return}
+    var l=L(R.t.lang),t=$('readTitle');t.textContent='';
+    t.appendChild(el('b',null,R.t.name));t.appendChild(document.createTextNode(' · '+l.name));
+    if(R.fresh){R.fresh=false;rStop();rShow(0,0);return}
+    rUi();
   }
 
   /* --- edit mode for folders: rename by tapping, reorder with the arrows --- */
@@ -1778,7 +2320,7 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
 
   function render(){
     if(view!=='home'&&!active(lang))view='home';
-    $('vHome').hidden=view!=='home';$('vTopics').hidden=view!=='topics';$('vFolder').hidden=view!=='folder';$('vTrain').hidden=view!=='train';
+    $('vHome').hidden=view!=='home';$('vTopics').hidden=view!=='topics';$('vFolder').hidden=view!=='folder';$('vTrain').hidden=view!=='train';$('vRead').hidden=view!=='read';
     var g1=$('g1'),g2=$('g2'),l=view==='home'?null:L(lang);
     var t1=l?glyph(l):'a',t2=l?glyph(l):'я';
     if(g1.textContent!==t1||g2.textContent!==t2){
@@ -1787,7 +2329,7 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
       anim(g1,[{opacity:0,transform:'translateY(-28px)'},{opacity:1,transform:'none'}],700);
       anim(g2,[{opacity:0,transform:'translateY(36px)'},{opacity:1,transform:'none'}],900);
     }
-    if(view==='home')renderHome();else if(view==='topics')renderTopics();else if(view==='folder')renderFolder();else renderTrain();
+    if(view==='home')renderHome();else if(view==='topics')renderTopics();else if(view==='folder')renderFolder();else if(view==='read')renderRead();else renderTrain();
     fits();
   }
   /* when the screen's content fits, the scrolling layer stops taking scroll gestures at all */
@@ -1874,6 +2416,50 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
     card.addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();e.stopPropagation();flip()}});
   })();
   $('toHome').addEventListener('click',function(){go('home')});
+  /* speed reading */
+  $('tabWords').addEventListener('click',function(){setMode(false)});
+  $('tabRead').addEventListener('click',function(){setMode(true)});
+  $('addTextBtn').addEventListener('click',openAddText);
+  $('restoreTexts').addEventListener('click',function(){
+    htext=htext.filter(function(id){return id!=='ex-'+lang});store.set('htext',htext);
+    entering=true;render();entering=false;
+  });
+  $('readBack').addEventListener('click',function(){go('topics')});
+  $('rPlay').addEventListener('click',function(){rPause(!R.paused)});
+  $('rNext').addEventListener('click',function(){if(!R.done&&!R.busy){R.paused=false;rEnd()}});
+  $('rPrev').addEventListener('click',function(){
+    if(R.done||R.busy)return;
+    R.paused=false;
+    /* from the reading: back to the sentence itself; from a sentence: the one before */
+    if(R.phase==='trans'){rStop();rShow(R.i,-1)}else if(R.i>0)rMove(-1);
+  });
+  $('rAgain').addEventListener('click',function(){rStop();R.paused=false;rShow(0,0)});
+  /* tap = pause / go on; swipe left = next sentence, right = the one before */
+  (function(){
+    var c=$('rcard'),pid=null,sx=0,sy=0,dx=0,drag=false,moved=false;
+    c.addEventListener('pointerdown',function(e){if(e.button||R.busy)return;pid=e.pointerId;sx=e.clientX;sy=e.clientY;dx=0;drag=false;moved=false});
+    c.addEventListener('pointermove',function(e){
+      if(pid!==e.pointerId)return;
+      var mx=e.clientX-sx,my=e.clientY-sy;
+      if(!drag){
+        if(Math.abs(mx)<10||Math.abs(mx)<Math.abs(my))return;
+        drag=true;moved=true;try{c.setPointerCapture(pid)}catch(_){}
+      }
+      dx=mx;c.style.transition='none';c.style.transform='translateX('+mx+'px) rotate('+(mx/30)+'deg)';
+    });
+    function end(e){
+      if(pid!==e.pointerId)return;pid=null;
+      if(!drag)return;drag=false;
+      c.style.transition=reduce?'none':'transform .3s cubic-bezier(.2,.9,.25,1.1)';c.style.transform='';
+      if(dx<-80){R.paused=false;rStop();rMove(1)}
+      else if(dx>80){R.paused=false;$('rPrev').click()}
+    }
+    c.addEventListener('pointerup',end);c.addEventListener('pointercancel',end);
+    c.addEventListener('click',function(){if(moved){moved=false;return}rPause(!R.paused)});
+    c.addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();e.stopPropagation();rPause(!R.paused)}});
+  })();
+  /* the timer never runs while the app is in the background */
+  document.addEventListener('visibilitychange',function(){if(document.hidden&&view==='read'&&!R.paused&&!R.done)rPause(true)});
   $('toTopics').addEventListener('click',function(){go('topics')});
   $('toFolder').addEventListener('click',function(){go('folder')});
   function setRev(v){
@@ -1951,6 +2537,13 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
     if(e.key==='Escape'&&!$('dlgWrap').hidden){closeDlg();return}
     if(e.key==='Escape'&&!$('addWrap').hidden){closeAdd();return}
     if(e.key==='Escape'&&!$('sheetWrap').hidden){closeSheet();return}
+    if(view==='read'&&e.target===document.body){
+      if(e.key===' '){e.preventDefault();rPause(!R.paused)}
+      else if(e.key==='ArrowRight')$('rNext').click();
+      else if(e.key==='ArrowLeft')$('rPrev').click();
+      else if(e.key==='Escape')go('topics');
+      return;
+    }
     if(view!=='train'||e.target!==document.body)return;
     if(e.key===' '){e.preventDefault();flip()}
     else if(e.key==='ArrowRight')fling(1);
@@ -2015,7 +2608,7 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
   /* standalone build: cards ship with the app, progress and languages stay on this device */
   base=(window.CARDS||[]).filter(function(c){return c.ru&&c.word&&c.lang});
   merge();loaded=true;rebuild(false);
-  $('ver').textContent='build 16.10 23:58';
+  $('ver').textContent='build 20.10 21:41';
   render();
   if('serviceWorker' in navigator&&location.protocol.indexOf('http')===0){
     navigator.serviceWorker.register('sw.js').catch(function(){});
